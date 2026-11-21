@@ -6,13 +6,23 @@ Production installation is **BLOCKED**. This branch is based on Gate 03 Producti
 
 | Check | Status | Evidence |
 | --- | --- | --- |
-| Effective Development and Production targets | BLOCKED | Prior Gate 03 inventory identifies Development as `ntbaoylcrwkowqqvzkno` and Production as `udghxwlhztwxvkjaefjh`. `pnpm exec supabase projects list --output json` could not authenticate. Current project metadata, database state and deployment bindings remain unverified. |
-| Production API health | FAIL | An unauthenticated GET of `https://api.neptlium.com/v1/status` returned HTTP 503 with `rate_limit_unavailable`. The symptom does not identify the deployed database. |
-| Hosted schema, grants and history | BLOCKED | Prior inventory reports empty Production public schema and history and an absent limiter RPC. Recheck both projects on independently verified connections before assessing actual compatibility. |
+| Project inventory | PASS | Connected Supabase management evidence supplied for this gate identifies Neptlium Production as `udghxwlhztwxvkjaefjh` and Neptlium Dev as `ntbaoylcrwkowqqvzkno`. Both are `ACTIVE_HEALTHY` on PostgreSQL 17.11. |
+| Hosted limiter inventory | FAIL | The supplied read-only SQL inventory found zero public functions matching rate-limiter names in either project. The required RPC is absent from the reported inventories. |
+| Hosted migration prefix and effective grants | BLOCKED | The supplied check found no accessible `supabase_migrations.schema_migrations` in either project. Absence and insufficient access remain distinct possibilities. This workspace reran `pnpm exec supabase projects list --output json` and received “Access token not provided”. No separate hosted SQL connection was available here. |
+| Effective Vercel Production binding | BLOCKED | No authenticated Vercel deployment inspection was available. The approved Production ref and the ref actually bound to the running API are separate facts. |
+| Production API health | FAIL | The prior unauthenticated GET of `https://api.neptlium.com/v1/status` returned HTTP 503 with `rate_limit_unavailable`. No fresh request was sent for this reconciliation because the route may consume a limiter slot. |
 | Production backup and restore | BLOCKED | No protected Production archive, external digest, isolated restore evidence or platform retention inventory was available. Engine archive mode alone provides no such evidence. |
 | Hosted installation, cutover and execution | NOT RUN | Scope is limited to read-only hosted evidence and disposable database rehearsals. |
 
-The API's `SUPABASE_URL` is shared by its Auth verifier, repositories and distributed limiter. The limiter uses the server role to call `public.consume_api_rate_limit(text,integer,integer)` and fails closed without an authoritative decision. Compare effective Vercel project refs and credential provenance for App, API, Admin, Treasury and Pay by deployment SHA and environment. Record only public refs and pass/fail results.
+### Exact limiter contract and cause of the 503
+
+The production serverless factory passes `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the database-backed limiter. The API calls `POST /rest/v1/rpc/consume_api_rate_limit` with JSON keys `p_key`, `p_limit`, and `p_window_ms`. It requires `public.consume_api_rate_limit(text, integer, integer)` to return a single row with `allowed boolean`, `remaining integer`, and `reset_at timestamp with time zone`. The key is a SHA-256 digest of the bucket identifier. The server role needs `USAGE` on `public` and `EXECUTE` on the exact function. Browser roles must lack execution access. The client has no in-memory fallback for this Production dependency.
+
+The missing function is sufficient to explain the previous 503 if the running API targets either reported project. The response alone cannot establish the effective project or prove the upstream failure code. A wrong URL, mismatched credential, revoked execute grant, unavailable PostgREST or stale schema cache, transport failure, and invalid decision shape can all produce the same public response. The healthy management status does not verify connectivity from the deployed API.
+
+To verify the binding without exporting credentials, an authorized operator should identify the Vercel deployment serving `api.neptlium.com`, record its deployment ID and Git SHA, and attest the effective Supabase URL's project ref and whether the bound server credential belongs to it. If existing upstream telemetry is available, correlate only the status and structured error code, such as `PGRST202` for an unresolvable function or `42501` for a denied grant. Project settings describe future deployments and may differ from the running deployment. [Vercel environment variable scope](https://vercel.com/docs/environment-variables/managing-environment-variables)
+
+The smallest database remediation already exists in the reviewed ordered chain. Migration `20260815115118_distributed_api_rate_limiting.sql` creates the table and exact RPC. Gate 03C.6's `20261121130000` hardens it and restricts direct service-role table access. Release them through a verified migration prefix and approved recovery gate. An ad hoc one-function install into an unknown schema would create migration drift. A binding correction is warranted only if the effective deployment points at the wrong project. Neither change has been applied to a hosted environment.
 
 ## STAGED — schema and authorization
 
@@ -39,8 +49,8 @@ The fixture rehearsal uses a pre-upgrade application archive and synthetic Auth 
 
 Before requesting hosted installation, collect:
 
-1. Authorized dashboard inventory and verified read-only connections for both refs. Run `supabase/test/gate-03c6/read-only-inventory.sql` through `psql -X -v ON_ERROR_STOP=1` on each approved connection. It reports metadata and history without invoking business RPCs. Confirm the trusted host and role independently.
+1. Authorized dashboard inventory and verified read-only connections for both refs. Run `supabase/test/gate-03c6/read-only-inventory.sql` through `psql -X -v ON_ERROR_STOP=1` on each approved connection. It reports the exact limiter signature and argument/return shape, scope and execution grants, and separately records whether history exists and whether the inspection role can read it. It invokes no business RPCs. Confirm the trusted host and role independently.
 2. Exact-prefix history, actual schema compatibility, managed extensions and function owner/grantor review. Resolve drift, identity continuity and release ordering before the separately approved release-tool preflight.
 3. A consistent Production archive with independent encryption key custody, protected offsite retention, an external digest and capture time. Record managed Auth, extensions, settings and role-credential recovery separately. Supabase database backups include Storage metadata but omit object bytes. [Supabase database backups](https://supabase.com/docs/guides/platform/backups)
 4. Restoration of that exact artifact into a disposable compatible target. Compare history, schemas, data counts, ownership, ACLs, RLS and tenant authorization. Record recovery duration, observed data cutoff and all exclusions.
-5. Verified limiter RPC availability and passing API health for the exact candidate. Clerk and financial execution retain independent release gates.
+5. Verified limiter RPC availability and passing API health for the exact candidate. Check PostgREST exposure and service-role grants before conducting any separately authorized end-to-end probe. Clerk and financial execution retain independent release gates.

@@ -75,6 +75,8 @@ managed_roles() {
 stage=replay
 source_db=$(start_db)
 wait_db "$source_db"
+db "$source_db" < supabase/test/gate-03c6/read-only-inventory.sql > "$scratch/empty-inventory"
+grep -Fxq 'limiter_contract|0|f|f|f|f' "$scratch/empty-inventory"
 admin "$source_db" < supabase/test/gate-03c6/managed-prerequisites.sql
 admin "$source_db" < supabase/test/gate-03c6/managed-storage-fixture.sql
 db "$source_db" -c 'create schema supabase_migrations; create table supabase_migrations.schema_migrations(version text primary key, name text not null);'
@@ -116,6 +118,8 @@ wait "$client_b"
 sort "$scratch/decision-a" "$scratch/decision-b" > "$scratch/decisions"
 printf 'f\nt\n' | cmp - "$scratch/decisions"
 db "$source_db" < supabase/test/gate-03c6/read-only-inventory.sql > "$scratch/upgrade-inventory"
+grep -Fxq 'limiter_contract|1|t|t|t|f' "$scratch/upgrade-inventory"
+grep -Fxq 'migration_history t t' "$scratch/upgrade-inventory"
 printf 'Verified upgrade, grants, tenant RLS, identity rollback, and limiter behavior (%s versions).\n' "$(wc -l < "$scratch/upgrade-expected")"
 
 stage=recovery

@@ -1,4 +1,4 @@
--- Run through an independently verified approve-listed project connection.
+-- Run through an independently verified allowlisted project connection.
 -- psql flags: -X -v ON_ERROR_STOP=1. This inventory returns no customer rows or credentials.
 begin isolation level repeatable read read only;
 set local statement_timeout = '15s';
@@ -41,11 +41,45 @@ where p.proname in ('consume_api_rate_limit','handle_new_user','current_authenti
   and r.rolname in ('anon','authenticated','service_role')
 order by p.oid::regprocedure::text, r.rolname;
 
-select to_regclass('supabase_migrations.schema_migrations') is not null as has_history \gset
-\if :has_history
+-- One row even when the exact API function is missing. Count overloads separately.
+with limiter as (
+  select p.*
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.proname = 'consume_api_rate_limit'
+), exact as (
+  select * from limiter where prokind = 'f' and pronargs = 3
+    and proargtypes[0] = 'text'::regtype
+    and proargtypes[1] = 'integer'::regtype
+    and proargtypes[2] = 'integer'::regtype
+)
+select 'limiter_contract' as check_name,
+       (select count(*) from limiter) as same_name_count,
+       exact.oid is not null as exact_signature_exists,
+       coalesce(exact.proargnames = array['p_key','p_limit','p_window_ms','allowed','remaining','reset_at']
+                and pg_get_function_result(exact.oid) = 'TABLE(allowed boolean, remaining integer, reset_at timestamp with time zone)', false)
+         as exact_api_shape,
+       coalesce(has_schema_privilege('service_role','public','USAGE')
+                and has_function_privilege('service_role',exact.oid,'EXECUTE'), false) as service_role_callable,
+       coalesce(has_function_privilege('anon',exact.oid,'EXECUTE')
+                or has_function_privilege('authenticated',exact.oid,'EXECUTE'), false) as browser_execute_granted
+from (values (1)) as probe(dummy) left join exact on true;
+
+-- Catalog existence and the inspection role's access are separate observations.
+with history as (
+  select n.oid as schema_oid, c.oid as relation_oid
+  from pg_namespace n join pg_class c on c.relnamespace = n.oid
+  where n.nspname = 'supabase_migrations' and c.relname = 'schema_migrations'
+    and c.relkind in ('r', 'p')
+)
+select 'migration_history' as check_name, exists(select from history) as history_exists,
+       exists(select from history where has_schema_privilege(schema_oid,'USAGE')
+                                     and has_table_privilege(relation_oid,'SELECT')) as history_readable
+\gset
+\echo :check_name :history_exists :history_readable
+\if :history_readable
 select coalesce(json_agg(version order by version), '[]'::json) as applied_versions
 from supabase_migrations.schema_migrations;
 \else
-\echo Migration history relation absent. Independently confirm public schema compatibility before planning.
+\echo Migration history is absent or unreadable. Establish the exact version prefix and schema compatibility before planning.
 \endif
 rollback;

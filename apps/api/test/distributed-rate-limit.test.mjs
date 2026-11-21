@@ -20,12 +20,25 @@ test('distributed limiter uses server-only RPC with an opaque key', async () => 
   assert.equal(call.init.redirect, 'error');
   const body = JSON.parse(call.init.body);
   assert.match(body.p_key, /^[0-9a-f]{64}$/);
+  assert.deepEqual(Object.keys(body).sort(), ['p_key', 'p_limit', 'p_window_ms']);
+  assert.equal(body.p_limit, 5);
+  assert.equal(body.p_window_ms, 60_000);
   assert.equal(call.init.body.includes('customer-ip'), false);
 });
 
-test('distributed limiter fails closed on storage failure', async () => {
-  const limiter = new SupabaseRateLimiter('https://example.supabase.co', 'service', async () => new Response('{}', { status: 503 }));
-  await assert.rejects(() => limiter.consume('key', 5, 60_000), (error) => error.code === 'rate_limit_unavailable');
+test('distributed limiter fails closed on missing RPC, denied permissions, and storage outages', async () => {
+  for (const request of [
+    async () => Response.json({ code: 'PGRST202' }, { status: 404 }),
+    async () => Response.json({ code: '42501' }, { status: 403 }),
+    async () => new Response(null, { status: 503 }),
+    async () => { throw new Error('fixture transport failure'); },
+  ]) {
+    const limiter = new SupabaseRateLimiter('https://example.supabase.co', 'fixture-only', request);
+    await assert.rejects(() => limiter.consume('key', 5, 60_000), {
+      status: 503,
+      code: 'rate_limit_unavailable',
+    });
+  }
 });
 
 test('distributed limiter denies malformed and ambiguous storage decisions', async () => {
