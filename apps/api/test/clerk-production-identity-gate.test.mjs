@@ -25,9 +25,10 @@ const env = {
   NEPTLIUM_CLERK_PRODUCTION_AUDIENCE: audience,
 };
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-const loadKeys = async origin => {
-  assert.equal(origin, issuer);
-  return { fixture: { ...publicKey.export({ format: 'jwk' }), alg: 'RS256', use: 'sig' } };
+const key = { ...publicKey.export({ format: 'jwk' }), kid: 'fixture', alg: 'RS256', use: 'sig' };
+const request = async url => {
+  assert.equal(url.href, issuer + '/.well-known/jwks.json');
+  return Response.json({ keys: [key] });
 };
 const store = {
   resolveActiveClerkPrincipal: async value => value === subject ? principal : null,
@@ -44,9 +45,9 @@ function jwt(claims = {}, header = {}) {
 }
 
 test('production identity gate remains disabled unless all release and trust conditions match', () => {
-  assert.equal(createClerkProductionIdentityGate({}, loadKeys, store), undefined);
+  assert.equal(createClerkProductionIdentityGate({}, store, request), undefined);
   for (const key of Object.keys(env).filter(key => env[key] === 'true')) {
-    assert.equal(createClerkProductionIdentityGate({ ...env, [key]: undefined }, loadKeys, store), undefined);
+    assert.equal(createClerkProductionIdentityGate({ ...env, [key]: undefined }, store, request), undefined);
   }
   for (const override of [
     { VERCEL_ENV: 'preview' },
@@ -57,11 +58,11 @@ test('production identity gate remains disabled unless all release and trust con
     { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://arriving-pup-3595.clerk.accounts.dev' },
     { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://clerk.neptlium.com/path' },
     { NEPTLIUM_CLERK_PRODUCTION_AUDIENCE: 'neptlium-api-preview' },
-  ]) assert.equal(createClerkProductionIdentityGate({ ...env, ...override }, loadKeys, store), undefined);
+  ]) assert.equal(createClerkProductionIdentityGate({ ...env, ...override }, store, request), undefined);
 });
 
 test('verified production subject resolves the preserved principal and active requested tenant', async () => {
-  const gate = createClerkProductionIdentityGate(env, loadKeys, store);
+  const gate = createClerkProductionIdentityGate(env, store, request);
   assert.deepEqual(await gate(jwt(), tenant.toUpperCase()), { principalId: principal, organizationId: tenant });
   assert.equal(await gate(jwt(), otherTenant), null);
   assert.equal(await gate(jwt({ sub: 'user_unlinked123' }), tenant), null);
@@ -70,7 +71,7 @@ test('verified production subject resolves the preserved principal and active re
 test('bad JWT trust, invalid signature and inactive or unavailable membership deny', async () => {
   let reads = 0;
   const audited = { ...store, resolveActiveClerkPrincipal: async () => { reads++; return principal; } };
-  const gate = createClerkProductionIdentityGate(env, loadKeys, audited);
+  const gate = createClerkProductionIdentityGate(env, audited, request);
   const forged = jwt().split('.');
   forged[2] = Buffer.alloc(256).toString('base64url');
   for (const token of [
@@ -82,13 +83,19 @@ test('bad JWT trust, invalid signature and inactive or unavailable membership de
     jwt({ exp: 1 }),
     jwt({ nbf: Math.floor(Date.now() / 1000) + 120 }),
     jwt({}, { typ: 'at+jwt' }),
+    jwt({}, { kid: 'unknown', jku: 'https://untrusted.example/jwks' }),
   ]) assert.equal(await gate(token, tenant), null);
   assert.equal(reads, 0);
 
   for (const lookup of [async () => false, async () => { throw new Error('fixture outage'); }]) {
-    const deny = createClerkProductionIdentityGate(env, loadKeys, { ...store, isActiveOrganizationMember: lookup });
+    const deny = createClerkProductionIdentityGate(env, { ...store, isActiveOrganizationMember: lookup }, request);
     assert.equal(await deny(jwt(), tenant), null);
   }
-  const outage = createClerkProductionIdentityGate(env, async () => { throw new Error('key service unavailable'); }, store);
+  const outage = createClerkProductionIdentityGate(env, store, async () => new Response(null, { status: 503 }));
   assert.equal(await outage(jwt(), tenant), null);
+  const malformed = createClerkProductionIdentityGate(env, audited, async () =>
+    Response.json({ keys: [{ ...key, n: 'AQAB' }] }));
+  const readsBeforeMalformed = reads;
+  assert.equal(await malformed(jwt(), tenant), null);
+  assert.equal(reads, readsBeforeMalformed);
 });
