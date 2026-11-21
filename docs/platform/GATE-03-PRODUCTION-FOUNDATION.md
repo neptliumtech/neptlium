@@ -35,6 +35,8 @@ The staged API gate reuses the independent RS256 verifier, requires production d
 
 ## Production-specific recovery and install gate
 
+[Gate 03C.6](GATE-03C6-SUPABASE-READINESS.md) tracks the staged migration, isolated recovery rehearsal, and current release blockers.
+
 1. Verify the exact Production project and effective callers. Obtain a restricted Production backup connection through approved secret management and verify TLS against the reviewed host. Establish the platform retention and restore options independently. Use a quiescent or consistent-snapshot logical archive covering application schemas, rows, sequences, migration history, exportable roles and grants. Inventory managed Auth, Storage object data and configuration, extension prerequisites and separately held signing material. Record checksum and protected offsite retention.
 2. Restore that exact encrypted Production archive to a disposable, access-controlled Supabase-compatible target. Verify checksum, schemas, policies, roles/grants, migration versions, record counts and ledger ownership. Record managed restore prerequisites and any exclusions. The disposable Gate 02F replay and Gate 02J synthetic backup are useful rehearsals. Production recovery requires its own archive and proof.
 3. Recheck the target and run the reviewed planner in #167 against its actual history. The observed empty history passes the pinned 50-file check and lists 50 pending versions. Run the release tool dry run only after connecting to the verified target under the approved procedure. Review false-empty drift, legacy policy/function retirement, Auth prerequisites and recovery evidence. Obtain separate explicit owner approval before installing on the exact Production ref.

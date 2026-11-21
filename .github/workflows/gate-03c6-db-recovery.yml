@@ -1,0 +1,25 @@
+name: Gate 03C.6 isolated database recovery
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gate-03c6-db-recovery.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/scripts/gate-03c6-rehearse.sh'
+      - 'supabase/test/gate-03c6/**'
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Pull the reviewed Supabase PostgreSQL image
+        run: docker pull public.ecr.aws/supabase/postgres:17.11.0.004@sha256:b15d862126dd2dac02da524696ccfde2dcce2ceaee0a58973b2727befe492706
+      - name: Replay, test upgrade and restore a synthetic archive offline
+        run: bash supabase/scripts/gate-03c6-rehearse.sh
