@@ -1,22 +1,22 @@
-import { verifyClerkJwtRs256, type ClerkJwtTrust } from './clerk-jwt-verifier.js';
+import { createClerkSigningKeyLoader } from './clerk-jwks.js';
+import { verifyClerkJwtRs256 } from './clerk-jwt-verifier.js';
 import type { ClerkPreviewIdentityStore } from './clerk-preview-identity.js';
 
 const CUSTOMER_ORIGIN = 'https://app.neptlium.com';
 const CUSTOMER_AUDIENCE = 'neptlium-api';
+const PRODUCTION_CLERK_ISSUER = 'https://clerk.neptlium.com';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type Environment = Readonly<Record<string, string | undefined>>;
-type LoadKeys = (issuer: string) => Promise<ClerkJwtTrust['keys']>;
 
 /**
- * Staged production identity boundary. Route registration and production key
- * loading are separate release work. The result conveys identity and membership.
+ * Staged production identity boundary. Route registration is separate release work. The result conveys identity and membership.
  * Financial routes still require their own authorization and ledger invariants.
  */
 export function createClerkProductionIdentityGate(
   env: Environment,
-  loadKeys: LoadKeys,
   store: ClerkPreviewIdentityStore,
+  request: typeof fetch = fetch,
 ) {
   const issuer = env.NEPTLIUM_CLERK_PRODUCTION_ISSUER;
   const origin = issuer && URL.parse(issuer);
@@ -31,7 +31,9 @@ export function createClerkProductionIdentityGate(
       env.NEXT_PUBLIC_SITE_URL !== CUSTOMER_ORIGIN ||
       env.NEPTLIUM_CLERK_PRODUCTION_AUDIENCE !== CUSTOMER_AUDIENCE ||
       !origin || origin.protocol !== 'https:' || origin.origin !== issuer || origin.port ||
-      !origin.hostname.endsWith('.neptlium.com') || issuer === CUSTOMER_ORIGIN) return undefined;
+      issuer !== PRODUCTION_CLERK_ISSUER) return undefined;
+
+  const loadKeys = createClerkSigningKeyLoader(origin.origin, request);
 
   return async (bearerToken: string, organizationId: string) => {
     if (!UUID.test(organizationId) || bearerToken.length > 16_384 ||
@@ -43,7 +45,7 @@ export function createClerkProductionIdentityGate(
         issuer: origin.origin,
         audience: CUSTOMER_AUDIENCE,
         authorizedParties: [CUSTOMER_ORIGIN],
-        keys: await loadKeys(origin.origin),
+        keys: await loadKeys(),
       });
       if (!result.valid) return null;
       const principal = await store.resolveActiveClerkPrincipal(result.subject);
