@@ -81,14 +81,29 @@ export function createClerkSigningKeyLoader(
   let pending: Promise<SigningKeys> | undefined;
 
   async function refresh(): Promise<SigningKeys> {
-    const response = await request(new URL(endpoint), {
-      redirect: 'error',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    // The independent deadline also covers injected transports that ignore abort.
+    // Cache mutation happens only after the bounded operation succeeds.
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      deadline = setTimeout(() => reject(new Error('Clerk JWKS unavailable: timeout')), FETCH_TIMEOUT_MS);
     });
-    const keys = signingKeys(await readJwks(response, endpoint.href));
-    cached = { keys, expiresAt: now() + CACHE_TTL_MS };
-    return keys;
+    try {
+      const keys = await Promise.race([
+        (async () => {
+          const response = await request(new URL(endpoint), {
+            redirect: 'error',
+            cache: 'no-store',
+            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          });
+          return signingKeys(await readJwks(response, endpoint.href));
+        })(),
+        timeout,
+      ]);
+      cached = { keys, expiresAt: now() + CACHE_TTL_MS };
+      return keys;
+    } finally {
+      if (deadline) clearTimeout(deadline);
+    }
   }
 
   return async () => {
