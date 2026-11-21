@@ -86,7 +86,7 @@ test('aborts a stalled response body at the fetch deadline', async () => {
           signal.addEventListener('abort', () => controller.error(signal.reason), { once: true });
         },
       }), { headers: { 'content-type': 'application/jwk-set+json' } }));
-    await assert.rejects(load, { name: 'TimeoutError' });
+    await assert.rejects(load, /timeout/);
   } finally {
     clearTimeout(keepAlive);
   }
