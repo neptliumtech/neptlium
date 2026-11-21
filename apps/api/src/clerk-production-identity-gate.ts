@@ -1,10 +1,13 @@
 import { createClerkSigningKeyLoader } from './clerk-jwks.js';
 import { verifyClerkJwtRs256 } from './clerk-jwt-verifier.js';
-import type { ClerkPreviewIdentityStore } from './clerk-preview-identity.js';
+import {
+  STAGED_CLERK_PRODUCTION_ISSUER,
+  type StagedClerkProductionIdentityStore,
+  type StagedClerkProductionSessionAuthority,
+} from './staged-clerk-production-identity.js';
 
 const CUSTOMER_ORIGIN = 'https://app.neptlium.com';
 const CUSTOMER_AUDIENCE = 'neptlium-api';
-const PRODUCTION_CLERK_ISSUER = 'https://clerk.neptlium.com';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -15,7 +18,8 @@ type Environment = Readonly<Record<string, string | undefined>>;
  */
 export function createClerkProductionIdentityGate(
   env: Environment,
-  store: ClerkPreviewIdentityStore,
+  store: StagedClerkProductionIdentityStore,
+  sessions: StagedClerkProductionSessionAuthority,
   request: typeof fetch = fetch,
 ) {
   const issuer = env.NEPTLIUM_CLERK_PRODUCTION_ISSUER;
@@ -31,7 +35,7 @@ export function createClerkProductionIdentityGate(
       env.NEXT_PUBLIC_SITE_URL !== CUSTOMER_ORIGIN ||
       env.NEPTLIUM_CLERK_PRODUCTION_AUDIENCE !== CUSTOMER_AUDIENCE ||
       !origin || origin.protocol !== 'https:' || origin.origin !== issuer || origin.port ||
-      issuer !== PRODUCTION_CLERK_ISSUER) return undefined;
+      issuer !== STAGED_CLERK_PRODUCTION_ISSUER) return undefined;
 
   const loadKeys = createClerkSigningKeyLoader(origin.origin, request);
 
@@ -46,11 +50,12 @@ export function createClerkProductionIdentityGate(
         audience: CUSTOMER_AUDIENCE,
         authorizedParties: [CUSTOMER_ORIGIN],
         keys: await loadKeys(),
+        requireSession: true,
       });
-      if (!result.valid) return null;
-      const principal = await store.resolveActiveClerkPrincipal(result.subject);
-      if (!principal || !UUID.test(principal) ||
-          await store.isActiveOrganizationMember(principal, tenant) !== true) return null;
+      if (!result.valid || !result.sessionId || result.expiresAt === undefined) return null;
+      if (await sessions.isActiveSession(origin.origin, result.subject, result.sessionId) !== true) return null;
+      const principal = await store.resolveTenant(origin.origin, result.subject, tenant);
+      if (!principal || !UUID.test(principal) || Date.now() >= result.expiresAt * 1000) return null;
       return { principalId: principal, organizationId: tenant };
     } catch {
       return null;

@@ -1,14 +1,13 @@
 # Gate 03C.5 — Durable identity continuity and tenant isolation
 
-**Status: implementation design / review required. Not a production certification.**
+**Status: STAGED repository implementation. Supabase Auth remains CURRENT.**
 
-## Verified source behavior
+## Staged implementation
 
-- The staged Production Clerk gate verifies the configured exact issuer, audience, authorized party and RS256 signature before resolving a subject. It is not registered in Production routes.
-- The gate currently accepts an injected `ClerkPreviewIdentityStore` contract. The existing Supabase implementation looks up one ACTIVE `CLERK` subject mapping, then one active principal.
-- Organization membership is checked by resolving exactly one active `SUPABASE_AUTH` subject for that same principal and looking up an active, non-suspended, non-revoked `organization_memberships` row.
-- The lookup currently keys `CLERK` mappings by provider and subject, not by issuer or Clerk instance. This is not evidence that Development and Production identities are isolated.
-- No onboarding/bootstrap write is implemented by this read-only gate. The current Supabase Auth runtime remains authoritative.
+- The unregistered API gate verifies the configured exact issuer, audience, authorized party and RS256 signature, and requires a signed session ID. It checks that session against the Clerk Backend API using an independently provisioned Production instance key. Every lookup requires current active status and matching session and subject identifiers.
+- The forward-only migration creates an empty issuer-bound link table. Its owner-only enrollment command pins the existing active Supabase mapping and principal. PostgreSQL uniqueness and conflict handling protect exact retries and reject competing mappings. The owner-only revocation command records evidence and keeps revoked bindings reserved.
+- The service-role read RPC evaluates the link, pinned Supabase mapping, principal and tenant membership together. An inactive row, missing evidence or storage failure denies access.
+- New principal bootstrap is disabled. The staged API has no write path, and the only enrollment command requires an existing principal. New-account creation and its recovery procedure require separate approval.
 
 ## Required production identity contract
 
@@ -20,14 +19,10 @@
 6. **Availability:** Storage/network errors, invalid response shapes and ambiguous mappings fail closed. Never fall back to an email match, Preview data, cached membership or a different provider.
 7. **Environment:** Verify Production/Preview database project refs and issuer bindings independently; no service-role credential in browsers.
 
-## Evidence and acceptance tests required before activation
+## Evidence required before activation
 
-- Inspect actual migration/schema definitions for `identity_provider_subjects`, `identity_principals` and `organization_memberships`, including uniqueness, RLS and status constraints.
-- Prove exact Production issuer binding and negative cross-instance subject collision.
-- Exercise active continuity, duplicate/conflicting mappings, missing/revoked link, suspended/retired principal, wrong tenant, duplicate/revoked membership and storage failure.
-- Demonstrate identity-link and membership revocation without touching financial ownership, plus separate Clerk session revocation tests against an actual approved Production session.
-- Demonstrate deterministic, concurrency-safe bootstrap and rollback in an isolated database before proposing any Production migration.
-- Run API build, typecheck, lint, focused tests and CI. Review effective deployed secrets/project refs separately.
+- Verify the Production Clerk Backend API credential against the approved Clerk instance and the database project against the approved environment. Exercise revocation using an authorized Production test session only after separate approval.
+- Verify deployment migration ordering and rollback in an isolated database. Demonstrate concurrency-safe new-account provisioning and recovery before asking to enable bootstrap.
 - Require independent Production recovery proof and explicit owner approval for any migration or authentication activation.
 
 **Release guard:** No Production route registration, Clerk cutover flags, Supabase Auth retirement, Production migration, merge to main or deployment is authorized by this document.
