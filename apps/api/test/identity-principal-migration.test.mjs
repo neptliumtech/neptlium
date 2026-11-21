@@ -238,3 +238,94 @@ test('migration rejects an orphaned profile instead of inventing an identity', a
     await db.close();
   }
 });
+
+test('staged Production continuity isolates issuers, preserves ownership and denies revoked or missing authority', async () => {
+  const db = await productionShapedDatabase();
+  const issuer = 'https://clerk.neptlium.com';
+  const preview = 'https://fixture.clerk.accounts.dev';
+  const subject = 'user_fixture123';
+  const org = '00000000-0000-4000-8000-000000000003';
+  const otherOrg = '00000000-0000-4000-8000-000000000004';
+  const enroll = (iss, sub, user) => db.query(
+    'select public.stage_clerk_production_continuity($1, $2, $3, $4) as id',
+    [iss, sub, user, 'review-fixture'],
+  );
+  const resolve = async (iss = issuer, memberOrg = org) => (await db.query(
+    'select public.resolve_staged_clerk_production_tenant($1, $2, $3) as id',
+    [iss, subject, memberOrg],
+  )).rows[0].id;
+
+  try {
+    await db.exec(migration);
+    // Apply the actual membership DDL with an isolated organizations fixture.
+    const platform = await readFile(new URL(
+      '../../../supabase/migrations/20260914174500_platform_core_owner_control_plane.sql',
+      import.meta.url,
+    ), 'utf8');
+    await db.exec('create table public.organizations(id uuid primary key)');
+    await db.exec(platform.slice(
+      platform.indexOf('create table public.organization_memberships ('),
+      platform.indexOf('create table public.canonical_assets ('),
+    ));
+    await db.query('insert into public.organizations(id) values ($1), ($2)', [org, otherOrg]);
+    await db.query(
+      "insert into public.organization_memberships(organization_id, user_id, role) values ($1, $2, 'viewer'), ($3, $4, 'owner')",
+      [org, first, otherOrg, second],
+    );
+    await db.query(
+      "insert into public.identity_provider_subjects(principal_id, provider, provider_subject) values ($1, 'CLERK', $2)",
+      [second, subject],
+    );
+    const staged = await readFile(new URL(
+      '../../../supabase/migrations/20261121120000_stage_clerk_production_continuity.sql',
+      import.meta.url,
+    ), 'utf8');
+    await db.exec(staged);
+
+    assert.equal(await resolve(), null);
+    await assert.rejects(enroll(preview, subject, first), { code: '23514' });
+    await assert.rejects(enroll(issuer, subject, otherOrg), { code: 'P0002' });
+    const retries = await Promise.all([
+      enroll(issuer, subject, first),
+      enroll(issuer, subject, first),
+    ]);
+    assert.deepEqual(retries.map(result => result.rows[0].id), [first, first]);
+    await assert.rejects(enroll(issuer, subject, second), { code: 'P0002' });
+    await assert.rejects(enroll(issuer, 'user_second123', first), { code: '23505' });
+    assert.equal(await resolve(), first);
+    assert.equal(await resolve(preview), null);
+    assert.equal(await resolve(issuer, otherOrg), null);
+
+    await db.exec('set role authenticated');
+    await assert.rejects(resolve(), { code: '42501' });
+    await db.exec('set role service_role');
+    assert.equal(await resolve(), first);
+    await assert.rejects(enroll(issuer, subject, first), { code: '42501' });
+    await assert.rejects(db.query('select public.revoke_staged_clerk_production_link($1, $2, $3)',
+      [issuer, subject, 'revoke-fixture']), { code: '42501' });
+    await db.exec('reset role');
+
+    await db.query("update public.identity_principals set status = 'SUSPENDED', suspended_at = now() where id = $1", [first]);
+    assert.equal(await resolve(), null);
+    await db.query("update public.identity_principals set status = 'ACTIVE', suspended_at = null where id = $1", [first]);
+    await db.query("update public.organization_memberships set status = 'revoked', revoked_at = now() where user_id = $1", [first]);
+    assert.equal(await resolve(), null);
+    await db.query("update public.organization_memberships set status = 'active', revoked_at = null where user_id = $1", [first]);
+    assert.equal(await resolve(), first);
+    await db.query("update public.identity_provider_subjects set status = 'REVOKED', revoked_at = now() where provider = 'SUPABASE_AUTH' and principal_id = $1", [first]);
+    assert.equal(await resolve(), null);
+    await db.query("update public.identity_provider_subjects set status = 'ACTIVE', revoked_at = null where provider = 'SUPABASE_AUTH' and principal_id = $1", [first]);
+    assert.equal(await resolve(), first);
+    const revoke = () => db.query('select public.revoke_staged_clerk_production_link($1, $2, $3) as revoked',
+      [issuer, subject, 'revoke-fixture']);
+    assert.equal((await revoke()).rows[0].revoked, true);
+    assert.equal((await revoke()).rows[0].revoked, false);
+    assert.equal(await resolve(), null);
+    await assert.rejects(enroll(issuer, subject, first), { code: 'P0002' });
+    assert.deepEqual((await db.query('select id from public.identity_principals order by id')).rows,
+      [{ id: first }, { id: second }]);
+    assert.equal((await db.query('select count(*)::int as total from public.staged_clerk_production_links')).rows[0].total, 1);
+  } finally {
+    await db.close();
+  }
+});

@@ -11,10 +11,11 @@ export interface ClerkJwtTrust {
   readonly authorizedParties: readonly string[];
   readonly keys: Readonly<Record<string, JsonWebKey>>;
   readonly nowSeconds?: number;
+  readonly requireSession?: boolean;
 }
 
 export type ClerkJwtVerification =
-  | { readonly valid: true; readonly subject: string }
+  | { readonly valid: true; readonly subject: string; readonly sessionId?: string; readonly expiresAt?: number }
   | { readonly valid: false };
 
 function decodePart(part: string): unknown {
@@ -67,6 +68,10 @@ export function verifyClerkJwtRs256(
     const publicKey = createPublicKey({ key, format: 'jwk' });
     const signature = Buffer.from(segments[2]!, 'base64url');
     if (!verifySignature('RSA-SHA256', Buffer.from(segments[0] + '.' + segments[1]), publicKey, signature)) return denied;
+    if (trust.requireSession) {
+      if (typeof claims.sid !== 'string' || !/^sess_[A-Za-z0-9]{8,128}$/.test(claims.sid)) return denied;
+      return { valid: true, subject: claims.sub, sessionId: claims.sid, expiresAt: claims.exp };
+    }
     return { valid: true, subject: claims.sub };
   } catch {
     return denied;

@@ -34,6 +34,14 @@ Historical identity-provider mapping rows may remain as inert migration/audit ev
 
 Email may assist account communication and onboarding but must not be used as privileged authorization or as a substitute for immutable subject identity.
 
+## STAGED — Gate 03C.5 Clerk identity migration
+
+The staged API verifies the precise Production issuer and token trust, then checks fresh Clerk session status before resolving an existing principal and the requested tenant. The forward-only migration introduces a separate issuer-bound table and a service-role-only read RPC. It starts empty. Legacy Clerk mappings provide no evidence for enrollment.
+
+Database-owner enrollment requires reviewed evidence of the immutable Clerk and Supabase subjects. A retry with the same evidence preserves the existing principal and link. Conflicting enrollment fails. The resolver reads the pinned Supabase mapping, active principal, and active tenant membership in one database snapshot. A database-owner revocation records the evidence reference and denies subsequent reads without changing financial ownership.
+
+New-account bootstrap is disabled by the read-only API boundary and the absence of a provisioning command. An unlinked subject cannot create a principal, profile or membership. Existing-account enrollment is the staged idempotent write foundation. Production activation requires independent instance and database binding proof, recovery evidence and a separate architecture and release decision. See [Gate 03C.5 continuity contract](GATE-03C5-IDENTITY-CONTINUITY.md).
+
 ## Customer application
 
 `apps/app` uses shared Supabase browser/server clients, session refresh, Neptlium-owned sign-in/sign-up UI, and server-side session APIs. Its API client obtains the current Supabase access token and sends it to `apps/api` as a bearer token.
