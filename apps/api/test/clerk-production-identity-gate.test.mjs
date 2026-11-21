@@ -57,6 +57,8 @@ test('production identity gate remains disabled unless all release and trust con
     { NEXT_PUBLIC_SITE_URL: 'https://preview.neptlium.com' },
     { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://arriving-pup-3595.clerk.accounts.dev' },
     { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://clerk.neptlium.com/path' },
+    { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://other.neptlium.com' },
+    { NEPTLIUM_CLERK_PRODUCTION_ISSUER: 'https://clerk.neptlium.com.evil.example' },
     { NEPTLIUM_CLERK_PRODUCTION_AUDIENCE: 'neptlium-api-preview' },
   ]) assert.equal(createClerkProductionIdentityGate({ ...env, ...override }, store, request), undefined);
 });
