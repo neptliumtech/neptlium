@@ -91,3 +91,8 @@ test('aborts a stalled response body at the fetch deadline', async () => {
     clearTimeout(keepAlive);
   }
 });
+
+test('enforces a deadline when a custom request ignores abort', async () => {
+  const load = createClerkSigningKeyLoader(issuer, async () => new Promise(() => {}));
+  await assert.rejects(load(), /timeout/);
+});
