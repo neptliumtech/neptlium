@@ -76,18 +76,34 @@ test('distributed limiter persists a window and denies browser-role RPC executio
       'utf8',
     );
     await db.exec(migration);
+    await db.exec('grant all on public.api_rate_limits to service_role, authenticated, anon');
+    await db.exec(readFileSync(
+      resolve(import.meta.dirname, '../../../supabase/migrations/20261120000000_harden_distributed_api_rate_limiting.sql'),
+      'utf8',
+    ));
     await db.exec('set role service_role');
     const consume = () => db.query(
       'select allowed, remaining from public.consume_api_rate_limit($1, $2, $3)',
       ['a'.repeat(64), 2, 60_000],
     );
-    assert.deepEqual((await consume()).rows, [{ allowed: true, remaining: 1 }]);
-    assert.deepEqual((await consume()).rows, [{ allowed: true, remaining: 0 }]);
-    assert.deepEqual((await consume()).rows, [{ allowed: false, remaining: 0 }]);
+    for (const policy of [[null, 1000], [2, null], [0, 1000], [2, 999]]) {
+      await assert.rejects(() => db.query(
+        'select * from public.consume_api_rate_limit($1, $2, $3)', ['a'.repeat(64), ...policy],
+      ), /invalid rate-limit policy/);
+    }
+    await assert.rejects(() => db.query('select * from public.api_rate_limits'), { code: '42501' });
+    const decisions = (await Promise.all(Array.from({ length: 12 }, consume))).flatMap(result => result.rows);
+    assert.deepEqual(decisions.filter(decision => decision.allowed), [
+      { allowed: true, remaining: 1 }, { allowed: true, remaining: 0 },
+    ]);
+    assert.ok(decisions.filter(decision => !decision.allowed).every(decision => decision.remaining === 0));
     await db.exec('reset role');
-    assert.deepEqual((await db.query('select request_count from public.api_rate_limits')).rows, [{ request_count: 3 }]);
-    await db.exec('set role authenticated');
-    await assert.rejects(consume, /permission denied/);
+    assert.deepEqual((await db.query('select request_count from public.api_rate_limits')).rows, [{ request_count: 2 }]);
+    for (const role of ['authenticated', 'anon']) {
+      await db.exec(`set role ${role}`);
+      await assert.rejects(consume, { code: '42501' });
+      await assert.rejects(() => db.query('select * from public.api_rate_limits'), { code: '42501' });
+    }
   } finally {
     await db.close();
   }
