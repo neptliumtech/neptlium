@@ -23,7 +23,7 @@ function jwt(overrides = {}) {
   return payload + '.' + sign('RSA-SHA256', Buffer.from(payload), privateKey).toString('base64url');
 }
 const store = {
-  resolveActiveClerkPrincipal: async subject => subject === 'user_12345678' ? principalId : null,
+  resolveActiveClerkPrincipal: async (issuer, subject) => issuer === trust.issuer && subject === 'user_12345678' ? principalId : null,
   isActiveOrganizationMember: async (p, org) => p === principalId && org === orgId,
 };
 
