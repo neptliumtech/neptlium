@@ -92,6 +92,22 @@ test('aborts a stalled response body at the fetch deadline', async () => {
   }
 });
 
+test('refreshes an unknown rotated key with a shared, rate-limited refresh', async () => {
+  let time = 0;
+  let requests = 0;
+  const load = createClerkSigningKeyLoader(issuer, async () =>
+    Response.json({ keys: [{ ...key, kid: ++requests === 1 ? 'first' : 'second' }] }), () => time);
+  await load('first');
+  await load('second');
+  assert.equal(requests, 1);
+  time = 5000;
+  const [rotated, concurrent] = await Promise.all([load('second'), load('second')]);
+  assert.ok(rotated.second);
+  assert.equal(rotated, concurrent);
+  await load('unknown');
+  assert.equal(requests, 2);
+});
+
 test('enforces a deadline when a custom request ignores abort', async () => {
   const load = createClerkSigningKeyLoader(issuer, async () => new Promise(() => {}));
   await assert.rejects(load(), /timeout/);

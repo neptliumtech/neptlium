@@ -10,7 +10,10 @@ const PRIVATE_FIELDS = ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth'];
 type SigningKeys = Readonly<Record<string, JsonWebKey>>;
 
 async function readJwks(response: Response, endpoint: string): Promise<unknown> {
-  if (response.status !== 200 || !response.body) throw new Error('Clerk JWKS unavailable');
+  if (response.status !== 200 || !response.body) {
+    void response.body?.cancel().catch(() => undefined);
+    throw new Error('Clerk JWKS unavailable');
+  }
   const mediaType = response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase();
   if (response.redirected || (response.url && response.url !== endpoint) ||
       response.headers.has('content-range') ||
@@ -71,18 +74,18 @@ export function createClerkSigningKeyLoader(
   issuer: string,
   request: typeof fetch = fetch,
   now: () => number = () => performance.now(),
-): () => Promise<SigningKeys> {
+): (kid?: string) => Promise<SigningKeys> {
   const origin = new URL(issuer);
   if (origin.protocol !== 'https:' || origin.origin !== issuer || origin.port) throw new Error('Invalid Clerk issuer origin');
   const endpoint = new URL('/.well-known/jwks.json', origin);
 
   let cached: { keys: SigningKeys; expiresAt: number } | undefined;
   let retryAt = 0;
+  let rotationRefreshAt = 0;
   let pending: Promise<SigningKeys> | undefined;
 
   async function refresh(): Promise<SigningKeys> {
-    // The independent deadline also covers injected transports that ignore abort.
-    // Cache mutation happens only after the bounded operation succeeds.
+    // Bound the entire refresh even if an injected transport ignores abort.
     let deadline: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_resolve, reject) => {
       deadline = setTimeout(() => reject(new Error('Clerk JWKS unavailable: timeout')), FETCH_TIMEOUT_MS);
@@ -99,15 +102,21 @@ export function createClerkSigningKeyLoader(
         })(),
         timeout,
       ]);
-      cached = { keys, expiresAt: now() + CACHE_TTL_MS };
+      const refreshedAt = now();
+      cached = { keys, expiresAt: refreshedAt + CACHE_TTL_MS };
+      rotationRefreshAt = refreshedAt + RETRY_DELAY_MS;
       return keys;
     } finally {
       if (deadline) clearTimeout(deadline);
     }
   }
 
-  return async () => {
-    if (cached && now() < cached.expiresAt) return cached.keys;
+  return async (kid) => {
+    const time = now();
+    if (cached && time < cached.expiresAt &&
+        (!kid || Object.hasOwn(cached.keys, kid) || (!pending && time < rotationRefreshAt))) {
+      return cached.keys;
+    }
     if (now() < retryAt) throw new Error('Clerk JWKS unavailable');
     pending ??= refresh().catch(error => {
       retryAt = now() + RETRY_DELAY_MS;

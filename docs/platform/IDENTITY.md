@@ -1,8 +1,8 @@
 # Identity and Access
 
-## Authoritative authentication model
+## CURRENT — production authentication
 
-Supabase Auth is Neptlium's sole active authentication and browser-session provider for customer and operator surfaces.
+Supabase Auth is Neptlium's sole production authentication and browser-session provider for customer and operator surfaces.
 
 This applies to:
 
@@ -12,6 +12,20 @@ This applies to:
 - authenticated Neptlium Treasury surfaces where applicable
 
 Browser applications use only the Supabase project URL and publishable client key. Service-role credentials remain server-only.
+
+## TRANSITION — isolated Clerk Preview migration
+
+Gate 03C.5 permits customer authentication and session migration work in isolated Preview deployments. Use nonproduction Clerk instances, credentials, redirect origins and isolated data and persistence. Preview sessions, tokens and mappings cannot grant production access. Production continues to accept only Supabase Auth for authentication. Browser code may receive the nonproduction Clerk publishable key in Preview. Clerk secrets and Supabase service-role credentials remain server-only.
+
+The API must verify Clerk token signature, issuer, audience, authorized parties, expiration and signing-key rotation against the intended environment. Resolve the verified provider subject through a unique, durable, active link to the existing immutable Neptlium principal. Unlinked subjects and missing, ambiguous, suspended, revoked or unavailable mappings fail closed. Email matching, user-editable metadata, client-supplied IDs and Clerk organization claims cannot establish ownership or membership.
+
+Where organization membership still references `auth.users.id`, resolve the verified legacy UUID through the same stable principal and enforce active membership and server-owned role, policy and resource ownership checks. Preserve existing Supabase RLS and database constraints. Missing or conflicting linkage denies tenant access.
+
+## TARGET — Clerk customer authentication
+
+Clerk is approved for customer sign-in, sign-up, MFA, recovery and sessions. Supabase/PostgreSQL continues to own persistence. Neptlium principals and server-owned roles, membership, policy, resource ownership and financial authorization continue to govern access. Changes to Admin and Treasury authentication require separate review and approval.
+
+Production cutover requires separate explicit approval after independent review and verified evidence of account continuity, tenant isolation, API authorization, Supabase RLS, Preview tests and builds, session transition, backups and rehearsed rollback. Preserve existing Supabase users, mappings, session recovery and rollback paths so the prior authentication route can be restored without changing ownership or financial history. See the [Clerk migration safety contract](../security/clerk-primary-auth-migration.md) and [Preview identity verification ledger](../security/clerk-preview-identity-phase1.md).
 
 ## Identity model
 
@@ -30,7 +44,7 @@ Existing principal UUIDs and financial ownership must be preserved. Authenticati
 
 For existing accounts, the active Supabase Auth subject must resolve deterministically to the preserved Neptlium principal. Ambiguous, conflicting, missing, suspended, or retired mappings fail closed.
 
-Historical identity-provider mapping rows may remain as inert migration/audit evidence. They are not accepted runtime credentials unless the current runtime explicitly supports that provider; currently only `SUPABASE_AUTH` is supported.
+Historical identity-provider mapping rows may remain as inert migration/audit evidence. They are not accepted runtime credentials unless the current runtime explicitly supports that provider; production supports only `SUPABASE_AUTH`.
 
 Email may assist account communication and onboarding but must not be used as privileged authorization or as a substitute for immutable subject identity.
 
@@ -91,7 +105,7 @@ Four account states are separate and none implies another: **authentication** (S
 
 ## Persistence boundary
 
-Supabase is both the active authentication provider and a server-side database/persistence platform, but these are distinct authorities.
+Supabase Auth is the current production authentication authority. Supabase/PostgreSQL remains the database and persistence platform through the transition and after any approved customer authentication cutover.
 
 Allowed persistence uses include repositories, RLS/constraints, provider inboxes, identity mapping tables, audit, ledger-related data, and reconciliation. Service-role credentials are infrastructure authority, server-only, and never become user credentials.
 
