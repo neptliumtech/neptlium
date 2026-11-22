@@ -12,6 +12,7 @@ export interface ClerkJwtTrust {
   readonly keys: Readonly<Record<string, JsonWebKey>>;
   readonly nowSeconds?: number;
   readonly sessionMaxAgeSeconds?: number;
+  readonly maxTokenLifetimeSeconds?: number;
 }
 
 export type ClerkJwtVerification =
@@ -84,6 +85,9 @@ export function verifyClerkJwtRs256(
         typeof claims.nbf !== 'number' || !Number.isSafeInteger(claims.nbf) || now < claims.nbf ||
         typeof claims.iat !== 'number' || !Number.isSafeInteger(claims.iat) || claims.iat > now) return denied;
     if (claims.exp <= claims.iat || claims.exp <= claims.nbf) return denied;
+    const maxLifetime = trust.maxTokenLifetimeSeconds;
+    if (maxLifetime !== undefined &&
+        (!Number.isSafeInteger(maxLifetime) || maxLifetime <= 0 || claims.exp - claims.iat > maxLifetime)) return denied;
     const maxAge = trust.sessionMaxAgeSeconds;
     const sessionId = claims.sid;
     if (maxAge !== undefined &&
