@@ -92,19 +92,19 @@ Provider
 
 Current and planned provider classification is:
 
-| Provider            | Category                               | Repository state                                                       |
-| ------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
-| Clerk               | Customer Identity Infrastructure       | Approved target for customers. Isolated Preview migration only.        |
-| Supabase Auth       | Production Identity Infrastructure     | Current production authentication and user-ID dependencies.            |
-| Supabase/PostgreSQL | Persistence Infrastructure             | Current                                                                |
-| Stripe              | Payment / Billing Infrastructure       | Current subscription-billing webhook ingress; not live Capital funding |
-| Circle              | Custody / Wallet Infrastructure        | Current adapter/source support; capability remains gated               |
-| Alchemy             | Blockchain Observation Infrastructure  | Current observation/RPC infrastructure where configured                |
-| Resend              | Communication Infrastructure           | Unsupported; no current integration                                    |
-| Mercury             | Banking Infrastructure                 | Unsupported; no current integration                                    |
-| Hyperliquid         | Execution Infrastructure               | Planned; no current integration                                        |
-| Aster               | Execution Infrastructure               | Planned; no current integration                                        |
-| Vercel              | Deployment / Operations Infrastructure | Current deployment infrastructure; not financial authority             |
+| Provider | Category | Repository state |
+| --- | --- | --- |
+| Clerk | Customer Identity Infrastructure | Approved target for customers. Isolated Preview migration only. |
+| Supabase Auth | Production Identity Infrastructure | Current production authentication and user-ID dependencies. |
+| Supabase/PostgreSQL | Persistence Infrastructure | Current |
+| Stripe | Payment / Billing Infrastructure | Current subscription-billing webhook ingress; not live Capital funding |
+| Circle | Custody / Wallet Infrastructure | Current adapter/source support; capability remains gated |
+| Alchemy | Blockchain Observation Infrastructure | Current observation/RPC infrastructure where configured |
+| Resend | Communication Infrastructure | Unsupported; no current integration |
+| Mercury | Banking Infrastructure | Unsupported; no current integration |
+| Hyperliquid | Execution Infrastructure | Planned; no current integration |
+| Aster | Execution Infrastructure | Planned; no current integration |
+| Vercel | Deployment / Operations Infrastructure | Current deployment infrastructure; not financial authority |
 
 Planned or unsupported providers MUST NOT be documented or presented as integrated solely because they are architectural candidates.
 
