@@ -7,8 +7,8 @@ create role supabase_admin nologin;
 grant usage on schema public to anon, authenticated, service_role;
 alter default privileges for role supabase_admin in schema public grant select on tables to authenticated;
 
-create table public.recovery_fixture (id integer primary key, visible boolean not null);
-insert into public.recovery_fixture values (1, true), (2, false);
+create table public.recovery_fixture (id integer generated always as identity primary key, visible boolean not null);
+insert into public.recovery_fixture (visible) values (true), (false);
 alter table public.recovery_fixture enable row level security;
 grant select on public.recovery_fixture to authenticated;
 create policy fixture_read on public.recovery_fixture for select to authenticated using (visible);

@@ -12,6 +12,8 @@ defaults=(
   DEV_RECOVERY_DB_PASSWORD=fixture
   DEV_RECOVERY_CA_PEM=fixture
   DEV_RECOVERY_APPROVAL=fixture
+  GITHUB_SHA=0123456789012345678901234567890123456789
+  DEV_RECOVERY_APPROVED_SHA=0123456789012345678901234567890123456789
   DEV_RECOVERY_RETENTION=ephemeral-job-only
 )
 
@@ -36,3 +38,6 @@ denies 'Dev-only password and trusted CA are required' DEV_RECOVERY_DB_PASSWORD=
 denies 'Dev-only password and trusted CA are required' DEV_RECOVERY_CA_PEM=
 denies 'recovery authorization and ephemeral retention must be recorded' DEV_RECOVERY_RETENTION=
 denies 'recovery authorization and ephemeral retention must be recorded' DEV_RECOVERY_APPROVAL=
+
+denies 'hosted recovery requires approval for the exact checked-out commit' DEV_RECOVERY_APPROVED_SHA=
+denies 'hosted recovery requires approval for the exact checked-out commit' DEV_RECOVERY_APPROVED_SHA=abcdefabcdefabcdefabcdefabcdefabcdefabcd

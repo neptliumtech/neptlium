@@ -20,6 +20,9 @@ jobs:
     if: ${{ github.event_name == 'pull_request' || !inputs.hosted_dev }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    strategy:
+      matrix:
+        mode: [synthetic, synthetic-reader]
     services:
       source:
         image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
@@ -45,10 +48,11 @@ jobs:
         env:
           RECOVERY_SOURCE_CONTAINER: ${{ job.services.source.id }}
           RECOVERY_TARGET_CONTAINER: ${{ job.services.recovery.id }}
-        run: bash scripts/dev-recovery/rehearse.sh synthetic
+          RECOVERY_MODE: ${{ matrix.mode }}
+        run: bash scripts/dev-recovery/rehearse.sh "$RECOVERY_MODE"
 
   hosted:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.hosted_dev && github.ref_name == github.event.repository.default_branch }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.hosted_dev && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: neptlium-dev-recovery
@@ -70,12 +74,15 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Verify checked-out revision
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
       - name: Encrypt, restore, and verify Dev checkpoint
         env:
           RECOVERY_SOURCE_CONTAINER: ${{ job.services.client.id }}
           RECOVERY_TARGET_CONTAINER: ${{ job.services.recovery.id }}
           DEV_RECOVERY_PROJECT_REF: ntbaoylcrwkowqqvzkno
           DEV_RECOVERY_APPROVAL: ${{ vars.DEV_RECOVERY_APPROVAL }}
+          DEV_RECOVERY_APPROVED_SHA: ${{ vars.DEV_RECOVERY_APPROVED_SHA }}
           DEV_RECOVERY_SOURCE_HOST: ${{ vars.DEV_RECOVERY_SOURCE_HOST }}
           DEV_RECOVERY_RETENTION: ${{ vars.DEV_RECOVERY_RETENTION }}
           DEV_RECOVERY_DB_PASSWORD: ${{ secrets.DEV_RECOVERY_DB_PASSWORD }}
