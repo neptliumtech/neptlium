@@ -1,0 +1,83 @@
+name: Dev logical recovery rehearsal
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dev-recovery.yml'
+      - 'scripts/dev-recovery/**'
+  workflow_dispatch:
+    inputs:
+      hosted_dev:
+        description: Run the approved Dev-only checkpoint and disposable restore
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic:
+    if: ${{ github.event_name == 'pull_request' || !inputs.hosted_dev }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      source:
+        image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+        env:
+          POSTGRES_PASSWORD: synthetic-service-only
+        options: >-
+          --label neptlium.dev-recovery=source
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 10
+      recovery:
+        image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+        env:
+          POSTGRES_PASSWORD: synthetic-service-only
+        options: >-
+          --label neptlium.dev-recovery=target
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Reject unsafe configurations
+        run: bash scripts/dev-recovery/test-preflight.sh
+      - name: Encrypt, restore, and verify synthetic checkpoint
+        env:
+          RECOVERY_SOURCE_CONTAINER: ${{ job.services.source.id }}
+          RECOVERY_TARGET_CONTAINER: ${{ job.services.recovery.id }}
+        run: bash scripts/dev-recovery/rehearse.sh synthetic
+
+  hosted:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.hosted_dev && github.ref_name == github.event.repository.default_branch }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: neptlium-dev-recovery
+    concurrency: neptlium-dev-recovery
+    services:
+      client:
+        image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+        env:
+          POSTGRES_PASSWORD: disposable-service-only
+        options: --label neptlium.dev-recovery=source
+      recovery:
+        image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+        env:
+          POSTGRES_PASSWORD: disposable-service-only
+        options: >-
+          --label neptlium.dev-recovery=target
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Encrypt, restore, and verify Dev checkpoint
+        env:
+          RECOVERY_SOURCE_CONTAINER: ${{ job.services.client.id }}
+          RECOVERY_TARGET_CONTAINER: ${{ job.services.recovery.id }}
+          DEV_RECOVERY_PROJECT_REF: ntbaoylcrwkowqqvzkno
+          DEV_RECOVERY_APPROVAL: ${{ vars.DEV_RECOVERY_APPROVAL }}
+          DEV_RECOVERY_SOURCE_HOST: ${{ vars.DEV_RECOVERY_SOURCE_HOST }}
+          DEV_RECOVERY_RETENTION: ${{ vars.DEV_RECOVERY_RETENTION }}
+          DEV_RECOVERY_DB_PASSWORD: ${{ secrets.DEV_RECOVERY_DB_PASSWORD }}
+          DEV_RECOVERY_CA_PEM: ${{ secrets.DEV_RECOVERY_CA_PEM }}
+        run: bash scripts/dev-recovery/rehearse.sh hosted
