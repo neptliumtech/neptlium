@@ -57,6 +57,7 @@ test('sends the Clerk bearer to the configured Preview API and accepts the match
       assert.equal(url.href, apiOrigin + '/v1/preview/clerk/session?organization_id=' + tenantId);
       assert.equal(init.method, 'GET');
       assert.equal(init.headers.authorization, 'Bearer ' + bearerToken);
+      assert.equal(init.headers['x-vercel-trusted-oidc-idp-token'], undefined);
       assert.equal(init.redirect, 'error');
       assert.equal(init.cache, 'no-store');
       assert.ok(init.signal instanceof AbortSignal);
@@ -102,6 +103,33 @@ test('denies missing, invalid, or cross-tenant API responses', async () => {
     Response.json({ principalId, organizationId: principalId }),
   ]) {
     const deps = { ...dependencies, request: async () => response };
+    assert.equal(await resolvePreviewClerkApiSession(tenantId, deps), null);
+  }
+});
+
+test('sends distinct application and workload credentials in a single non-redirecting request', async () => {
+  const oidcToken = 'oidc.workload.signature';
+  const deps = {
+    ...dependencies,
+    getTrustedSourceToken: async () => oidcToken,
+    request: async (url, init) => {
+      assert.equal(url.origin, apiOrigin);
+      assert.equal(init.headers.authorization, 'Bearer ' + bearerToken);
+      assert.equal(init.headers['x-vercel-trusted-oidc-idp-token'], oidcToken);
+      assert.equal(init.redirect, 'error');
+      return Response.json({ principalId, organizationId: tenantId });
+    },
+  };
+  assert.deepEqual(await resolvePreviewClerkApiSession(tenantId, deps), { principalId });
+});
+
+test('missing, malformed or unavailable workload identity prevents a protected request', async () => {
+  for (const getTrustedSourceToken of [
+    async () => null,
+    async () => 'invalid',
+    async () => { throw new Error('Unavailable'); },
+  ]) {
+    const deps = { ...dependencies, getTrustedSourceToken, request: async () => assert.fail('unexpected request') };
     assert.equal(await resolvePreviewClerkApiSession(tenantId, deps), null);
   }
 });
