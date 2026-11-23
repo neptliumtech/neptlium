@@ -28,11 +28,13 @@ These surfaces share one Neptlium identity. They must not be visually or operati
 
 ### Authentication authority
 
-**AUTHENTICATION: Supabase Auth only.**
+- **CURRENT** — Supabase Auth remains the production authentication and session authority until a separately approved cutover.
+- **TRANSITION** — Gate 03C.5 permits isolated Clerk customer-authentication migration work in Preview using nonproduction credentials and data. Keep Preview identity, sessions, mappings and access paths isolated from production. Production continues to reject Clerk sessions and tokens under this contract.
+- **TARGET** — Clerk is the approved customer-facing authentication and session provider. Supabase/PostgreSQL remains the database and persistence platform. Admin and Treasury authentication changes require separate review and approval. See [Identity and Access](docs/platform/IDENTITY.md).
 
-- Do not reintroduce any retired authentication provider, dependency, middleware, environment variable, webhook, identity mapper, or hosted auth UI.
+- Outside the approved Clerk Preview scope, do not reintroduce any retired authentication provider, dependency, middleware, environment variable, webhook, identity mapper, or hosted auth UI.
 - Do not introduce another third-party identity system without explicit architecture approval.
-- Browser applications may use only the Supabase project URL and publishable client key. Service-role credentials and provider secrets are server-only.
+- Browser applications may use the Supabase project URL and publishable client key and, within the approved Clerk Preview scope, a nonproduction Clerk publishable key. Service-role credentials and provider secrets are server-only.
 - Authentication proves identity only. It never grants financial, administrative, treasury, organization, or provider-execution authority by itself.
 - Authorization remains server-owned through immutable Neptlium principals, role/membership/policy state, governed API commands, RLS where applicable, and the financial authority chain.
 - Never authorize from user-editable metadata, email-domain heuristics, browser-provided user IDs, or client-visible role state.
@@ -44,6 +46,14 @@ These surfaces share one Neptlium identity. They must not be visually or operati
 Marketing may independently choose its editorial expression, structure, product narrative, category language, audience framing, information architecture, density, composition, and strategic product expression within the canonical Neptlium design authority. It may be more expressive than operational surfaces, but it does not establish an independent brand, token system, theme authority, or competing design system. Domain truth constrains **factual claims**; it does not require Marketing to publish internal engineering state.
 
 This independence never authorizes fabrication. Customers, AUM, balances, performance, returns, testimonials, partnerships, licences, regulatory status, custody, provider relationships, live execution, settlement, and live availability must not be falsely represented as facts.
+
+## Engineering workflow
+
+**BUILD → TEST → SHIP** is the authoritative engineering workflow.
+
+- **BUILD** — Deliver the smallest working capability in the owning boundary. Reuse existing contracts, components, and infrastructure before rebuilding. Inspect the relevant authority and implementation, then revisit affected evidence when it changes or a failure calls it into question. Reuse still-current evidence to avoid repeating completed audits.
+- **TEST** — Run focused behavioral checks and applicable typechecks, lint, and builds. Time-box recovery attempts, continue independent checks, and record blockers with evidence. Preserve all security, financial, and validation gates.
+- **SHIP** — Deliver a focused, reviewable change set with validation evidence and follow the Git completion rule for authorized publication. Explicit task restrictions on Git or hosted actions govern delivery.
 
 ## Source-of-truth order
 

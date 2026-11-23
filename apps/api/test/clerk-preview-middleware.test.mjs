@@ -23,8 +23,8 @@ function jwt(overrides = {}) {
   return payload + '.' + sign('RSA-SHA256', Buffer.from(payload), privateKey).toString('base64url');
 }
 const store = {
-  resolveActiveClerkPrincipal: async subject => subject === 'user_12345678' ? principalId : null,
-  isActiveOrganizationMember: async (p, org) => p === principalId && org === orgId,
+  resolveActiveTenantPrincipal: async (issuer, subject, org) =>
+    issuer === trust.issuer && subject === 'user_12345678' && org === orgId ? principalId : null,
 };
 
 test('isolated middleware authorizes only verified preview bearer with membership', async () => {
@@ -34,5 +34,5 @@ test('isolated middleware authorizes only verified preview bearer with membershi
   assert.equal(await authorizeClerkPreviewRequest({ authorization: 'Basic ' + jwt() }, orgId, trust, store, 'preview'), null);
   assert.equal(await authorizeClerkPreviewRequest({ authorization: 'Bearer ' + jwt({ azp: 'https://untrusted.example.test' }) }, orgId, trust, store, 'preview'), null);
   assert.equal(await authorizeClerkPreviewRequest({ authorization: 'Bearer ' + jwt() }, '00000000-0000-4000-8000-000000000003', trust, store, 'preview'), null);
-  assert.equal(await authorizeClerkPreviewRequest({ authorization: 'Bearer ' + jwt() }, orgId, trust, { ...store, resolveActiveClerkPrincipal: async () => null }, 'preview'), null);
+  assert.equal(await authorizeClerkPreviewRequest({ authorization: 'Bearer ' + jwt() }, orgId, trust, { ...store, resolveActiveTenantPrincipal: async () => null }, 'preview'), null);
 });

@@ -24,8 +24,9 @@ test('Clerk Preview API continues to require signed identity and active membersh
   const api = read('../api/src/clerk-preview-identity.ts');
   const middleware = read('../api/src/clerk-preview-middleware.ts');
   assert.match(api, /verifyClerkJwtRs256/);
-  assert.match(api, /resolveActiveClerkPrincipal/);
-  assert.match(api, /isActiveOrganizationMember/);
+  assert.match(api, /resolveActiveTenantPrincipal\(trust\.issuer, verified\.subject, organizationId\)/);
+  assert.match(api, /memberships:organization_memberships!inner/);
+  assert.match(api, /membership\.user_id !== legacy\.provider_subject/);
   assert.match(api, /environment !== 'preview'/);
   assert.match(middleware, /environment !== 'preview'/);
   assert.match(middleware, /authenticateClerkPreviewTenant/);

@@ -61,3 +61,39 @@ test('rejects empty trusted origin allowlist', () => {
 test('rejects insecure trusted origin', () => {
   assert.equal(verifyClerkJwtRs256(token(), { ...trust, authorizedParties: ['http://preview.neptlium.test'] }).valid, false);
 });
+
+test('accepts the exact audience as a single-element array', () => {
+  const jwt = token({ ...claims, aud: [trust.audience] });
+  assert.deepEqual(verifyClerkJwtRs256(jwt, trust), { valid: true, subject: claims.sub });
+});
+
+test('rejects audience arrays that do not contain exactly the trusted audience', () => {
+  for (const aud of [[], ['another-api'], [trust.audience, 'another-api'], [trust.audience, trust.audience], [42]]) {
+    assert.equal(verifyClerkJwtRs256(token({ ...claims, aud }), trust).valid, false, JSON.stringify(aud));
+  }
+});
+
+test('rejects an unsupported JOSE critical extension', () => {
+  const header = { alg: 'RS256', kid: 'key-1', typ: 'JWT', crit: ['example'], example: true };
+  assert.equal(verifyClerkJwtRs256(token(claims, header), trust).valid, false);
+});
+
+test('rejects malformed JOSE critical-header metadata', () => {
+  for (const crit of [null, false, 'example', {}, [], [42], [''], ['missing'], ['example', 'example'], ['alg']]) {
+    const header = { alg: 'RS256', kid: 'key-1', typ: 'JWT', crit, example: true };
+    assert.equal(verifyClerkJwtRs256(token(claims, header), trust).valid, false, JSON.stringify(crit));
+  }
+});
+
+test('rejects weak RSA keys and noncanonical signature encoding', () => {
+  const weak = generateKeyPairSync('rsa', { modulusLength: 1024 });
+  const [header, payload, signature] = token().split('.');
+  const body = header + '.' + payload;
+  const weakToken = body + '.' + sign('RSA-SHA256', Buffer.from(body), weak.privateKey).toString('base64url');
+  const weakJwk = { ...jwk, ...weak.publicKey.export({ format: 'jwk' }) };
+  assert.equal(verifyClerkJwtRs256(weakToken, { ...trust, keys: { 'key-1': weakJwk } }).valid, false);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const altered = signature.slice(0, -1) + alphabet[alphabet.indexOf(signature.at(-1)) + 1];
+  assert.deepEqual(Buffer.from(altered, 'base64url'), Buffer.from(signature, 'base64url'));
+  assert.equal(verifyClerkJwtRs256(body + '.' + altered, trust).valid, false);
+});

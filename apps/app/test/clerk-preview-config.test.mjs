@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { clerkPreviewConfig, isClerkPreviewPath } from '../lib/auth/clerk-preview-config.ts';
+
+const env = {
+  VERCEL_ENV: 'preview',
+  NEPTLIUM_API_AUTH_PROVIDER: 'clerk-preview',
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_' + Buffer.from('fixture.clerk.accounts.dev$').toString('base64'),
+  CLERK_SECRET_KEY: 'sk_test_fixture',
+  NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://app-preview.example.test',
+  NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://api-preview.example.test',
+  NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE: 'neptlium-preview',
+};
+
+test('Clerk sign-in requires an explicitly enabled Preview, test keys and an exact App origin', () => {
+  assert.equal(clerkPreviewConfig(env)?.appOrigin, env.NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN);
+  for (const overrides of [
+    { VERCEL_ENV: 'production' },
+    { VERCEL_TARGET_ENV: 'production' },
+    { NEPTLIUM_API_AUTH_PROVIDER: undefined },
+    { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_live_fixture' },
+    { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_fixture' },
+    { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_' + Buffer.from('clerk.production.example$').toString('base64') },
+    { CLERK_SECRET_KEY: 'sk_live_fixture' },
+    { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://app-preview.example.test/other' },
+    { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://app.neptlium.com' },
+    { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://neptlium-app.vercel.app' },
+  ]) assert.equal(clerkPreviewConfig({ ...env, ...overrides }), undefined);
+});
+
+test('missing or invalid API settings disable the entire Preview entry', () => {
+  assert.deepEqual(clerkPreviewConfig(env)?.api, {
+    origin: env.NEPTLIUM_CLERK_PREVIEW_API_ORIGIN,
+    template: env.NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE,
+    trustedSource: false,
+  });
+  for (const overrides of [
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: undefined },
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://api.neptlium.com' },
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://neptlium-api.vercel.app' },
+    { NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE: undefined },
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://api-preview.example.test/other' },
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: env.NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN },
+    { NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE: ' ' },
+  ]) {
+    assert.equal(clerkPreviewConfig({ ...env, ...overrides }), undefined);
+  }
+});
+
+test('Clerk middleware is scoped to the Preview subtree and reads its server key from the environment', () => {
+  const proxy = readFileSync(new URL('../proxy.ts', import.meta.url), 'utf8');
+  const previewProxy = readFileSync(new URL('../lib/auth/clerk-preview-proxy.ts', import.meta.url), 'utf8');
+  assert.match(proxy, /if \(isClerkPreviewPath\(request.nextUrl.pathname\)\)/);
+  assert.match(previewProxy, /request.nextUrl.origin !== preview.appOrigin/);
+  assert.doesNotMatch(previewProxy, /secretKey\s*:/);
+  for (const path of ['/preview/clerk', '/preview/clerk/sign-in/sso-callback', '/preview/clerk/dashboard']) {
+    assert.equal(isClerkPreviewPath(path), true);
+  }
+  for (const path of ['/preview/clerk-other', '/dashboard', '/auth/sign-in']) {
+    assert.equal(isClerkPreviewPath(path), false);
+  }
+});
+
+test('Preview session page acquires a Clerk bearer server-side and uses the existing API adapter', () => {
+  const page = readFileSync(new URL('../app/preview/clerk/dashboard/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /from '@clerk\/nextjs\/server'/);
+  assert.match(page, /session\.getToken\(\{ template: api\.template \}\)/);
+  assert.match(page, /const verified = session && activeSession && tenant/);
+  assert.match(page, /resolvePreviewClerkApiSession\(tenant,/);
+  assert.match(page, /activeSession.status !== 'active' \|\| activeSession.userId !== session\?\.userId/);
+  assert.match(page, /activeSession.id !== session\?\.sessionId/);
+  assert.match(page, /\{activeSession && \(\s*<>\s*<form/);
+  assert.match(page, /\{verified \? \(/);
+  assert.doesNotMatch(page, /verified\.(bearerToken|principalId)/);
+});
+
+test('Clerk Preview constrains redirect origins to the configured App', () => {
+  const layout = readFileSync(new URL('../app/preview/clerk/layout.tsx', import.meta.url), 'utf8');
+  assert.ok(layout.includes('allowedRedirectOrigins={[config.appOrigin]}'));
+  assert.ok(layout.includes("allowedRedirectProtocols={['https:']}"));
+});
+
+test('workload identity is opt-in and scoped to the Neptlium Vercel team deployment origin', () => {
+  const configured = { ...env, NEPTLIUM_CLERK_PREVIEW_VERCEL_TRUSTED_SOURCE: 'true' };
+  for (const origin of [
+    env.NEPTLIUM_CLERK_PREVIEW_API_ORIGIN,
+    'https://neptlium-api.vercel.app',
+    'https://api-other-team.vercel.app',
+    'https://api-neptliumforge.vercel.app:444',
+  ]) {
+    assert.equal(clerkPreviewConfig({ ...configured, NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: origin }), undefined);
+  }
+  const api = clerkPreviewConfig({
+    ...configured,
+    NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://neptlium-fixture-neptliumforge.vercel.app',
+  })?.api;
+  assert.equal(api?.trustedSource, true);
+  assert.equal(clerkPreviewConfig({ ...env, NEPTLIUM_CLERK_PREVIEW_VERCEL_TRUSTED_SOURCE: 'yes' }), undefined);
+});
