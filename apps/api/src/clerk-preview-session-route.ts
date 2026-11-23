@@ -2,6 +2,9 @@ import { clerkApiReadiness } from './clerk-token-boundary.js';
 import { createClerkPreviewAuthorizer } from './clerk-preview-middleware.js';
 import { SupabaseClerkPreviewIdentityStore } from './clerk-preview-identity.js';
 
+// Neptlium Dev is the approved hosted data boundary for this Preview flow.
+const PREVIEW_SUPABASE_URL = 'https://ntbaoylcrwkowqqvzkno.supabase.co';
+
 function httpsOrigin(input: string | undefined): string | undefined {
   if (!input) return undefined;
   const url = URL.parse(input);
@@ -16,10 +19,10 @@ export function clerkPreviewRouteConfig(env: Readonly<Record<string, string | un
   const databaseUrl = httpsOrigin(env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL);
   const databaseKey = env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_SERVICE_ROLE_KEY;
   if (!issuer || !/^https:\/\/[a-z0-9-]+\.clerk\.accounts\.dev$/.test(issuer) ||
-      !audience || !authorizedParty || authorizedParty === 'https://app.neptlium.com' ||
-      !databaseUrl || !databaseKey?.trim() ||
-      databaseUrl === URL.parse(env.SUPABASE_URL ?? '')?.origin ||
-      databaseKey === env.SUPABASE_SERVICE_ROLE_KEY) return undefined;
+      !audience || !authorizedParty ||
+      authorizedParty === 'https://app.neptlium.com' || authorizedParty === 'https://neptlium-app.vercel.app' ||
+      databaseUrl !== PREVIEW_SUPABASE_URL || !databaseKey?.trim() ||
+      (env.SUPABASE_URL && URL.parse(env.SUPABASE_URL)?.origin !== PREVIEW_SUPABASE_URL)) return undefined;
   return { issuer, audience, authorizedParty, databaseUrl, databaseKey };
 }
 

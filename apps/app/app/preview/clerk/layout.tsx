@@ -12,6 +12,8 @@ export default function ClerkPreviewLayout({ children }: { readonly children: Re
   return (
     <ClerkProvider
       publishableKey={config.publishableKey}
+      allowedRedirectOrigins={[config.appOrigin]}
+      allowedRedirectProtocols={['https:']}
       signInUrl={clerkPreviewPaths.signIn}
       signUpUrl={clerkPreviewPaths.signUp}
       signInForceRedirectUrl={clerkPreviewPaths.dashboard}

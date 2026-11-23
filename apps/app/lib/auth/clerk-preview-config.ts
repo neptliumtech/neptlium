@@ -1,4 +1,10 @@
 const PREVIEW_ROOT = '/preview/clerk';
+const productionOrigins = new Set([
+  'https://app.neptlium.com',
+  'https://api.neptlium.com',
+  'https://neptlium-app.vercel.app',
+  'https://neptlium-api.vercel.app',
+]);
 
 export const clerkPreviewPaths = {
   root: PREVIEW_ROOT,
@@ -33,7 +39,7 @@ export function clerkPreviewConfig(env: Readonly<Record<string, string | undefin
   const template = env.NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE?.trim();
   if (!publishableKey || !isDevelopmentPublishableKey(publishableKey) ||
       !secretKey || !/^sk_test_[A-Za-z0-9_-]+$/.test(secretKey) ||
-      !appOrigin || appOrigin === 'https://app.neptlium.com') return undefined;
-  if (!apiOrigin || !template || appOrigin === apiOrigin || apiOrigin === 'https://api.neptlium.com') return undefined;
+      !appOrigin || productionOrigins.has(appOrigin)) return undefined;
+  if (!apiOrigin || !template || appOrigin === apiOrigin || productionOrigins.has(apiOrigin)) return undefined;
   return { publishableKey, appOrigin, api: { origin: apiOrigin, template } };
 }
