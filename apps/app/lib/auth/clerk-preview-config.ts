@@ -41,5 +41,8 @@ export function clerkPreviewConfig(env: Readonly<Record<string, string | undefin
       !secretKey || !/^sk_test_[A-Za-z0-9_-]+$/.test(secretKey) ||
       !appOrigin || productionOrigins.has(appOrigin)) return undefined;
   if (!apiOrigin || !template || appOrigin === apiOrigin || productionOrigins.has(apiOrigin)) return undefined;
-  return { publishableKey, appOrigin, api: { origin: apiOrigin, template } };
+  const trustedSource = env.NEPTLIUM_CLERK_PREVIEW_VERCEL_TRUSTED_SOURCE;
+  if (trustedSource !== undefined && trustedSource !== 'true' && trustedSource !== 'false') return undefined;
+  if (trustedSource === 'true' && !/^https:\/\/[a-z0-9-]+-neptliumforge\.vercel\.app$/.test(apiOrigin)) return undefined;
+  return { publishableKey, appOrigin, api: { origin: apiOrigin, template, trustedSource: trustedSource === 'true' } };
 }

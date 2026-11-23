@@ -1,4 +1,5 @@
 import { SignOutButton } from '@clerk/nextjs';
+import { getVercelOidcToken } from '@vercel/oidc';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { notFound, redirect } from 'next/navigation';
 import { clerkPreviewConfig, clerkPreviewPaths } from '@/lib/auth/clerk-preview-config';
@@ -34,6 +35,7 @@ export default async function PreviewClerkDashboard({
         apiProvider: 'clerk-preview',
         apiOrigin: api.origin,
         getSessionToken: () => session.getToken({ template: api.template }),
+        ...(api.trustedSource ? { getTrustedSourceToken: getVercelOidcToken } : {}),
       })
     : null;
 
