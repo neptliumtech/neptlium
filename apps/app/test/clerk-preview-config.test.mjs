@@ -33,6 +33,7 @@ test('missing or invalid API settings disable the entire Preview entry', () => {
   assert.deepEqual(clerkPreviewConfig(env)?.api, {
     origin: env.NEPTLIUM_CLERK_PREVIEW_API_ORIGIN,
     template: env.NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE,
+    trustedSource: false,
   });
   for (const overrides of [
     { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: undefined },
@@ -78,4 +79,22 @@ test('Clerk Preview constrains redirect origins to the configured App', () => {
   const layout = readFileSync(new URL('../app/preview/clerk/layout.tsx', import.meta.url), 'utf8');
   assert.ok(layout.includes('allowedRedirectOrigins={[config.appOrigin]}'));
   assert.ok(layout.includes("allowedRedirectProtocols={['https:']}"));
+});
+
+test('workload identity is opt-in and scoped to the Neptlium Vercel team deployment origin', () => {
+  const configured = { ...env, NEPTLIUM_CLERK_PREVIEW_VERCEL_TRUSTED_SOURCE: 'true' };
+  for (const origin of [
+    env.NEPTLIUM_CLERK_PREVIEW_API_ORIGIN,
+    'https://neptlium-api.vercel.app',
+    'https://api-other-team.vercel.app',
+    'https://api-neptliumforge.vercel.app:444',
+  ]) {
+    assert.equal(clerkPreviewConfig({ ...configured, NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: origin }), undefined);
+  }
+  const api = clerkPreviewConfig({
+    ...configured,
+    NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://neptlium-fixture-neptliumforge.vercel.app',
+  })?.api;
+  assert.equal(api?.trustedSource, true);
+  assert.equal(clerkPreviewConfig({ ...env, NEPTLIUM_CLERK_PREVIEW_VERCEL_TRUSTED_SOURCE: 'yes' }), undefined);
 });

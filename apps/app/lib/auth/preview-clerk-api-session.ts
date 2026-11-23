@@ -7,6 +7,8 @@ export interface PreviewClerkSessionDependencies {
   readonly apiOrigin: string | undefined;
   /** Acquire the JWT from the authenticated Clerk server session. */
   readonly getSessionToken: () => Promise<string | null>;
+  /** Vercel workload identity for a protected Preview API deployment. */
+  readonly getTrustedSourceToken?: () => Promise<string | null>;
   readonly request?: typeof fetch;
 }
 
@@ -29,11 +31,18 @@ export async function resolvePreviewClerkApiSession(
     const token = await deps.getSessionToken();
     if (!token || token.length > 16384 || !JWT.test(token)) return null;
 
+    const headers: Record<string, string> = { accept: 'application/json', authorization: `Bearer ${token}` };
+    if (deps.getTrustedSourceToken) {
+      const oidcToken = await deps.getTrustedSourceToken();
+      if (!oidcToken || oidcToken.length > 16384 || !JWT.test(oidcToken)) return null;
+      headers['x-vercel-trusted-oidc-idp-token'] = oidcToken;
+    }
+
     const target = new URL('/v1/preview/clerk/session', origin);
     target.searchParams.set('organization_id', tenantId.toLowerCase());
     const response = await (deps.request ?? fetch)(target, {
       method: 'GET',
-      headers: { accept: 'application/json', authorization: `Bearer ${token}` },
+      headers,
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(8000),
