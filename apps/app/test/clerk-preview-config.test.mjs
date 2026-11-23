@@ -25,6 +25,7 @@ test('Clerk sign-in requires an explicitly enabled Preview, test keys and an exa
     { CLERK_SECRET_KEY: 'sk_live_fixture' },
     { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://app-preview.example.test/other' },
     { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://app.neptlium.com' },
+    { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://neptlium-app.vercel.app' },
   ]) assert.equal(clerkPreviewConfig({ ...env, ...overrides }), undefined);
 });
 
@@ -36,6 +37,7 @@ test('missing or invalid API settings disable the entire Preview entry', () => {
   for (const overrides of [
     { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: undefined },
     { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://api.neptlium.com' },
+    { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://neptlium-api.vercel.app' },
     { NEPTLIUM_CLERK_PREVIEW_TOKEN_TEMPLATE: undefined },
     { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: 'https://api-preview.example.test/other' },
     { NEPTLIUM_CLERK_PREVIEW_API_ORIGIN: env.NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN },
@@ -70,4 +72,10 @@ test('Preview session page acquires a Clerk bearer server-side and uses the exis
   assert.match(page, /\{activeSession && \(\s*<>\s*<form/);
   assert.match(page, /\{verified \? \(/);
   assert.doesNotMatch(page, /verified\.(bearerToken|principalId)/);
+});
+
+test('Clerk Preview constrains redirect origins to the configured App', () => {
+  const layout = readFileSync(new URL('../app/preview/clerk/layout.tsx', import.meta.url), 'utf8');
+  assert.ok(layout.includes('allowedRedirectOrigins={[config.appOrigin]}'));
+  assert.ok(layout.includes("allowedRedirectProtocols={['https:']}"));
 });

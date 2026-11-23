@@ -22,7 +22,7 @@ const env = {
   NEPTLIUM_CLERK_PREVIEW_ISSUER: issuer,
   NEPTLIUM_CLERK_PREVIEW_AUDIENCE: audience,
   NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: party,
-  NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL: 'https://fixture-db.example.test',
+  NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL: 'https://ntbaoylcrwkowqqvzkno.supabase.co',
   NEPTLIUM_CLERK_PREVIEW_SUPABASE_SERVICE_ROLE_KEY: 'fixture-only',
 };
 function bearer(overrides = {}) {
@@ -50,36 +50,35 @@ function fixtureFetch({ jwksUnavailable = false, storageUnavailable = false } = 
     assert.equal(options.headers.apikey, 'fixture-only');
     if (storageUnavailable) return new Response(null, { status: 503 });
     const query = url.searchParams;
-    switch (url.pathname) {
-      case '/rest/v1/identity_provider_subjects':
-        if (query.get('provider') === 'eq.CLERK') {
-          return Response.json(query.get('provider_subject') === 'eq.' + existing
-            ? [{ principal_id: principalId, provider: 'CLERK', provider_subject: existing, status: 'ACTIVE', clerk_issuer: issuer }]
-            : []);
-        }
-        return Response.json([{ principal_id: principalId, provider: 'SUPABASE_AUTH', provider_subject: legacyUser, status: 'ACTIVE' }]);
-      case '/rest/v1/identity_principals':
-        return Response.json([{ id: principalId, status: 'ACTIVE', suspended_at: null, retired_at: null }]);
-      case '/rest/v1/organization_memberships':
-        return Response.json(query.get('organization_id') === 'eq.' + organizationId && query.get('user_id') === 'eq.' + legacyUser
-          ? [{ principal_id: principalId, organization_id: organizationId, user_id: legacyUser, status: 'active', suspended_at: null, revoked_at: null }]
-          : []);
-      default:
-        assert.fail('unexpected fixture request');
-    }
+    assert.equal(url.pathname, '/rest/v1/identity_principals');
+    assert.equal(query.get('clerk.clerk_issuer'), 'eq.' + issuer);
+    return Response.json(query.get('clerk.provider_subject') === 'eq.' + existing &&
+      query.get('memberships.organization_id') === 'eq.' + organizationId ? [{
+        id: principalId, status: 'ACTIVE', suspended_at: null, retired_at: null,
+        clerk: [{ provider: 'CLERK', provider_subject: existing, clerk_issuer: issuer, status: 'ACTIVE', revoked_at: null }],
+        legacy: [{ provider: 'SUPABASE_AUTH', provider_subject: legacyUser, status: 'ACTIVE', revoked_at: null }],
+        memberships: [{ organization_id: organizationId, user_id: legacyUser, status: 'active', suspended_at: null, revoked_at: null }],
+      }] : []);
   };
 }
 
-test('Clerk route configuration fails closed outside Preview and with shared database credentials', () => {
+test('Clerk route configuration fails closed outside Preview and with a database outside Neptlium Dev', () => {
   assert.ok(clerkPreviewRouteConfig(env));
+  assert.ok(clerkPreviewRouteConfig({
+    ...env,
+    SUPABASE_URL: env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_SERVICE_ROLE_KEY,
+  }));
   for (const overrides of [
     { VERCEL_ENV: 'production' },
     { VERCEL_TARGET_ENV: 'production' },
     { NEPTLIUM_CLERK_TENANT_ISOLATION_TESTED: undefined },
     { NEPTLIUM_CLERK_PREVIEW_AUDIENCE: undefined },
     { NEPTLIUM_CLERK_PREVIEW_ISSUER: issuer + '/path' },
-    { SUPABASE_URL: env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL + '/' },
-    { SUPABASE_SERVICE_ROLE_KEY: env.NEPTLIUM_CLERK_PREVIEW_SUPABASE_SERVICE_ROLE_KEY },
+    { NEPTLIUM_CLERK_PREVIEW_APP_ORIGIN: 'https://neptlium-app.vercel.app' },
+    { SUPABASE_URL: 'https://udghxwlhztwxvkjaefjh.supabase.co' },
+    { NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL: 'https://udghxwlhztwxvkjaefjh.supabase.co' },
+    { NEPTLIUM_CLERK_PREVIEW_SUPABASE_URL: 'https://db.example.test' },
   ]) assert.equal(clerkPreviewRouteConfig({ ...env, ...overrides }), undefined);
 });
 
@@ -107,7 +106,7 @@ test('canonical application exposes only the enabled Preview GET route', async (
   const url = '/v1/preview/clerk/session?organization_id=' + organizationId;
   const inject = { method: 'GET', url, headers: bearer() };
   const app = await buildThesisApp({
-    config: loadConfig({ ...env, NODE_ENV: 'test' }),
+    config: loadConfig({ ...env, NODE_ENV: 'test', API_ALLOWED_ORIGINS: party }),
     clerkPreviewFetch: fixtureFetch(),
   });
   const response = await app.inject(inject);
@@ -116,10 +115,45 @@ test('canonical application exposes only the enabled Preview GET route', async (
   assert.deepEqual(response.json(), { principalId, organizationId });
   assert.equal((await app.inject({ ...inject, headers: {} })).statusCode, 401);
   assert.equal((await app.inject({ ...inject, method: 'POST' })).statusCode, 404);
+  for (const origin of [party, 'https://app.neptlium.com', 'null', '']) {
+    const browser = await app.inject({ ...inject, headers: { ...inject.headers, origin } });
+    assert.equal(browser.statusCode, 403);
+    assert.equal(browser.headers['access-control-allow-origin'], undefined);
+  }
+  const preflight = await app.inject({ ...inject, method: 'OPTIONS', headers: { origin: party } });
+  assert.equal(preflight.statusCode, 403);
+  assert.equal(preflight.headers['access-control-allow-origin'], undefined);
   assert.equal((await app.inject({ ...inject, url: url + '&organization_id=' + otherOrganization })).statusCode, 422);
   const disabled = await buildThesisApp({
     config: loadConfig({ ...env, NODE_ENV: 'test', VERCEL_ENV: 'production' }),
     clerkPreviewFetch: () => assert.fail('disabled route fetched dependencies'),
   });
   assert.equal((await disabled.inject(inject)).statusCode, 404);
+});
+
+test('canonical HTTP server serves the Preview result without cookies, caching or CORS', async () => {
+  const { buildThesisApp } = await import('../dist/thesis-app.js');
+  const { loadConfig } = await import('../dist/config.js');
+  const app = await buildThesisApp({
+    config: loadConfig({ ...env, NODE_ENV: 'test' }),
+    clerkPreviewFetch: fixtureFetch(),
+  });
+  await app.listen({ host: '127.0.0.1', port: 0 });
+  try {
+    const { port } = app.server.address();
+    const endpoint = 'http://127.0.0.1:' + port + '/v1/preview/clerk/session?organization_id=';
+    const response = await fetch(endpoint + organizationId, { headers: bearer() });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { principalId, organizationId });
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('set-cookie'), null);
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+    for (const tenant of [organizationId, otherOrganization]) {
+      const denied = await fetch(endpoint + tenant, { headers: tenant === organizationId ? bearer({ sub: unlinked }) : bearer() });
+      assert.equal(denied.status, 401);
+      assert.equal((await denied.json()).error.code, 'authentication_required');
+    }
+  } finally {
+    await app.close();
+  }
 });

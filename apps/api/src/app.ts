@@ -622,15 +622,17 @@ export async function buildApp(deps: Dependencies = {}) {
         : Buffer.from(
             typeof input.payload === 'string' ? input.payload : JSON.stringify(input.payload),
           );
+    const isClerkPreviewSession = target.pathname === '/v1/preview/clerk/session';
     const responseHeaders = {
       ...jsonHeaders,
       'x-request-id': requestId,
-      ...(headers.origin && config.allowedOrigins.includes(headers.origin)
+      ...(!isClerkPreviewSession && headers.origin && config.allowedOrigins.includes(headers.origin)
         ? { 'access-control-allow-origin': headers.origin, vary: 'Origin' }
         : {}),
     };
     try {
-      if (headers.origin && !config.allowedOrigins.includes(headers.origin))
+      if ((isClerkPreviewSession && headers.origin !== undefined) ||
+          (headers.origin && !config.allowedOrigins.includes(headers.origin)))
         throw new ApiError(403, 'forbidden', 'Origin is not allowed');
       if (rawBody.length > 1_048_576)
         throw new ApiError(413, 'payload_too_large', 'Request body exceeds 1 MiB');
@@ -640,7 +642,7 @@ export async function buildApp(deps: Dependencies = {}) {
       } catch {
         throw new ApiError(422, 'validation_failed', 'Malformed JSON');
       }
-      if (input.method.toUpperCase() === 'OPTIONS') {
+      if (!isClerkPreviewSession && input.method.toUpperCase() === 'OPTIONS') {
         return {
           statusCode: 204,
           headers: {
