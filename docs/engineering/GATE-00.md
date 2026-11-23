@@ -19,6 +19,8 @@ Repository source baseline `ecf40bcd6a310f8efc2d34afb84d5e3cc50ac91b` on `neptli
 - PASS: frozen lockfile installation, workspace tests and workspace builds. Local executor used Node 24.22.3 and pnpm 11.25.0. Builds used placeholder public Supabase configuration and exercised compile and prerender steps.
 - PASS: workspace lint, workspace typecheck, Web Vitest (26 tests) and Supabase source contract tests (25 tests).
 - BLOCKED locally: PostgreSQL runtime fixtures require a disposable PostgreSQL 17 service. GitHub CI defines the fixture jobs.
+- PASS: changed Markdown formatting, diff whitespace, relative link targets across repository Markdown, and a scan of additions for common credential formats.
+- PASS: local API Vercel bundle, Vercel integration contracts, product hierarchy and auth cutover guard.
 - PR checks are tracked by GitHub against the documentation commit.
 
 ## Remaining release evidence

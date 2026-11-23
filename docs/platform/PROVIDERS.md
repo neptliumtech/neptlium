@@ -95,6 +95,17 @@ Provider
 
 The [capability registry](CAPABILITIES.md) owns the current provider inventory, implementation state and environment-specific evidence. Include a concrete repository consumer or connected infrastructure observation before adding a provider.
 
+### Public disclosure classifications
+
+These statements are consumed by Web's legal disclosure checks. See the registry for operational status and prerequisites.
+
+<!-- prettier-ignore -->
+| Provider | Category | Public disclosure boundary |
+| --- | --- | --- |
+| Resend | Communication Infrastructure | Unsupported; no current integration |
+| Mercury | Banking Infrastructure | Unsupported; no current integration |
+| Stripe | Payment / Billing Infrastructure | Subscription billing ingress; not live Capital funding |
+
 ## Domain-specific provider boundaries
 
 Neptlium MUST preserve domain semantics rather than create a universal provider interface.
