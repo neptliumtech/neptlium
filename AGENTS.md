@@ -2,18 +2,18 @@
 
 ## Repository authority
 
-Canonical repository: `Neptliumforge/neptlium`.
+Canonical repository: `neptliumtech/neptlium`. Use `main` as the integration base. Use a focused branch from the current remote head.
 
-| Boundary | Domain | Responsibility |
-| --- | --- | --- |
-| `apps/web` | `neptlium.com` | Public institutional marketing, brand, editorial, SEO, and information. |
-| `apps/app` | `app.neptlium.com` | Authenticated individual Capital operating application. |
-| `apps/treasury` | Treasury surface | Organizational Treasury operating experience. |
-| `apps/pay` | Pay surface | Payment and collection experience; presentation is not financial authority. |
-| `apps/admin` | `admin.neptlium.com` | Internal operator comprehension, risk visibility, control, and auditability. |
-| `apps/api` | `api.neptlium.com` | Domain truth, authentication enforcement, authorization, durability, provider isolation, ledger, and reconciliation. |
-| `apps/docs` | Docs surface | Developer and platform documentation application. |
-| `apps/status` | Status surface | Platform availability experience. |
+| Boundary        | Domain               | Responsibility                                                                                                       |
+| --------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`      | `neptlium.com`       | Public institutional marketing, brand, editorial, SEO, and information.                                              |
+| `apps/app`      | `app.neptlium.com`   | Authenticated individual Capital operating application.                                                              |
+| `apps/treasury` | Treasury surface     | Organizational Treasury operating experience.                                                                        |
+| `apps/pay`      | Pay surface          | Payment and collection experience; presentation is not financial authority.                                          |
+| `apps/admin`    | `admin.neptlium.com` | Internal operator comprehension, risk visibility, control, and auditability.                                         |
+| `apps/api`      | `api.neptlium.com`   | Domain truth, authentication enforcement, authorization, durability, provider isolation, ledger, and reconciliation. |
+| `apps/docs`     | Docs surface         | Developer and platform documentation application.                                                                    |
+| `apps/status`   | Status surface       | Platform availability experience.                                                                                    |
 
 Shared packages may be changed only when genuine shared authority requires it. Do not move subsystem-specific behavior into shared packages for convenience.
 
@@ -139,13 +139,11 @@ A build or execution is not complete merely because local validation passes. Com
 
 - Preserve unrelated work and inspect repository status before editing.
 - Use a focused branch and reviewable change set. Do not mix unrelated cleanup into the task.
-- For the Neptlium production reconstruction program, the user has granted standing authorization to commit, push, open/update the necessary pull request, and merge a completed execution into `main` once its required validation gates pass.
-- A completed build/execution must not remain local-only or branch-only. Before reporting it complete: commit all intended changes, push them to GitHub, integrate them into canonical `main`, fetch/re-read GitHub `main`, and verify that the resulting `main` SHA contains the completed change set.
-- If required validation fails or is blocked, do not merge merely to clear the branch. Fix the failure or report the execution as `FAIL`/`BLOCKED`; completion remains open.
-- After merge, synchronize the working environment with canonical `origin/main` before beginning the next execution so subsequent work starts from the merged authority.
-- Local-only modifications, unpushed commits, unmerged completed branches, or a local `main` that diverges from GitHub `main` are incomplete repository state and must be reconciled before the execution closes.
+- Agents may inspect authorized systems, edit in-scope files, run local checks against isolated resources, and publish a focused PR when the task authorizes it. Read the owning source, tests, configuration, subject documentation and any scoped agent instructions before editing. Reuse the owning package or domain contract.
+- Merge requires passing applicable checks, required review and explicit merge authorization. After an authorized merge, fetch `origin/main` and verify the merged SHA and intended files before starting dependent work.
+- Update subject documentation when behavior, API contracts, security boundaries, provider capabilities or release requirements change. Include source paths, exact commit/environment, executed checks, and any outstanding evidence in the PR.
 - Never force-push, bypass required checks/reviews, or evade repository protection. Resolve conflicts explicitly and preserve unrelated work.
-- This standing Git authorization does **not** authorize production deploys, database migrations, environment/provider mutations, production data changes, financial execution, or capability-flag enablement; those retain their separate authorization and safety gates.
+- Git authorization is separate from authorization for production deploys, database migrations, environment/provider mutations, production data changes, financial execution, or capability-flag enablement; those retain their separate authorization and safety gates.
 - Environment identity is not authorization. Git operations may be performed from any authorized environment, including connected GitHub tooling, Termux, Codespaces, CI, or another approved client.
 
 ## Canonical design authority

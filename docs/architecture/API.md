@@ -16,9 +16,13 @@ Public health/status/version routes do not establish user authority.
 
 Customer and operator bearer tokens are Supabase Auth access tokens. `apps/api` verifies the authenticated Supabase subject, resolves the active `SUPABASE_AUTH` mapping to a stable Neptlium principal, and performs Neptlium-owned authorization from that principal.
 
-No alternate runtime authentication mode is supported.
+The standard router uses Supabase Auth. The isolated Clerk Preview middleware is described in [Identity](../platform/IDENTITY.md).
 
 Service-role credentials are confined to the API/dedicated server clients. A bearer token, UI role, email address, user-editable metadata, or caller-supplied owner ID never bypasses resource ownership and policy checks.
+
+## Contract changes and errors
+
+The [request router](../../apps/api/src/app.ts) and [financial routes](../../apps/api/src/financial-routes.ts) define implemented methods, versioned paths and request validation. Use `/v1` contracts and preserve existing clients when changing response shapes. Route changes must update their owning contract tests and downstream clients. Read the [error definitions](../../apps/api/src/errors.ts) before introducing a status or exposing provider details. Distinguish invalid input, unauthenticated requests, denied access, throttling and unavailable durable infrastructure. Preserve safe request correlation.
 
 ## Repository architecture
 
@@ -88,7 +92,6 @@ The current Stripe boundary is evidence ingress for reviewed use cases. Stripe c
 - Secrets and raw sensitive provider payloads never appear in client responses or logs.
 - Authentication identifies the principal; authorization and financial authority remain separate server-owned concerns.
 - API responses are non-cacheable by default and include baseline anti-sniffing, frame-denial, referrer, and browser-feature restrictions. A future cacheable public response requires explicit review rather than inheriting permissive caching.
-
 
 ## Execution domain boundary
 

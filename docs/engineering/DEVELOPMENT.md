@@ -20,18 +20,22 @@ pnpm build
 
 Use workspace filters for focused work, for example `pnpm --filter @neptlium/web build`.
 
+Start the affected workspace with `pnpm --filter @neptlium/<workspace> dev`. Build the API before its watch command because it runs compiled output. Use untracked local configuration and explicitly point UI/API clients at isolated endpoints. See [Environment](ENVIRONMENT.md) and [surfaces](../product/SURFACES.md) for names and boundaries.
+
+For a focused change, run the workspace's lint, typecheck, test and build scripts plus applicable [CI](CI.md) contracts. For authentication and financial changes, cover negative ownership, tenant, role and policy paths. Database changes also require isolated SQL fixtures. Report the executed command, commit, environment and any missing dependency.
+
 ## Applications
 
-| Path | Authority |
-| --- | --- |
-| `apps/web` | Public product and marketing experience |
-| `apps/app` | Individual Capital operating experience |
-| `apps/treasury` | Organizational Treasury experience |
-| `apps/pay` | Neptlium Pay payment and collection experience |
-| `apps/admin` | Internal operations and control plane |
-| `apps/api` | Server-side API and orchestration boundary |
-| `apps/docs` | Developer/platform documentation application |
-| `apps/status` | Platform status experience |
+| Path            | Authority                                      |
+| --------------- | ---------------------------------------------- |
+| `apps/web`      | Public product and marketing experience        |
+| `apps/app`      | Individual Capital operating experience        |
+| `apps/treasury` | Organizational Treasury experience             |
+| `apps/pay`      | Neptlium Pay payment and collection experience |
+| `apps/admin`    | Internal operations and control plane          |
+| `apps/api`      | Server-side API and orchestration boundary     |
+| `apps/docs`     | Developer/platform documentation application   |
+| `apps/status`   | Platform status experience                     |
 
 Read root `AGENTS.md` and the nearest nested `AGENTS.md` before changing a subsystem.
 
