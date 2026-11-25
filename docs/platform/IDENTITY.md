@@ -13,11 +13,9 @@ This applies to:
 
 Browser applications use only the Supabase project URL and publishable client key. Service-role credentials remain server-only.
 
-## Clerk transition
+## Authentication authority consolidation
 
-Clerk is the approved customer identity direction. The connected Clerk application listed development and production instances on 2026-11-23. Activation at the Capital domain remains unverified. The merged [sign-in](../../apps/app/app/auth/sign-in/page.tsx) and [sign-up](../../apps/app/app/auth/sign-up/page.tsx) pages render Supabase forms. The [production cutover evaluator](../../apps/app/lib/clerk-cutover.ts) is a gate helper. Its existence and flags alone do not switch those pages.
-
-The isolated [Preview middleware](../../apps/api/src/clerk-preview-middleware.ts) verifies a Clerk bearer before consulting the [durable identity store](../../apps/api/src/clerk-preview-identity.ts). That store requires a unique active Clerk mapping, an active principal and an active membership tied to the same principal through its Supabase subject. Preview evidence must identify the deployment, issuer and tenant. Standard [API authentication](../../apps/api/src/authentication.ts) still resolves `SUPABASE_AUTH`. Existing account linking requires verified proof of control. Email equality cannot establish ownership.
+Supabase Auth is the sole approved authentication and session authority, consistent with the repository constitution. Parallel authentication paths are not approved for activation. Existing principal mappings, account ownership and financial history must be preserved. Retirement of residual implementation and deployment configuration requires dependency discovery, continuity tests and separate production authorization. Runtime retirement is not yet certified.
 
 ## Identity model
 
