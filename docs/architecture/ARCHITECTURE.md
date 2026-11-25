@@ -68,7 +68,7 @@ The platform distinguishes observed, modeled, proposed, approved, submitted, pro
 
 ## Deposit architecture
 
-Deposit is a first-class Capital Account workflow. The governing architecture is [`16_DEPOSIT_AND_ACCOUNT_FUNDING_ARCHITECTURE.md`](./16_DEPOSIT_AND_ACCOUNT_FUNDING_ARCHITECTURE.md).
+Deposit is a first-class Capital Account workflow. The governing architecture is [Funding](../financial/FUNDING.md).
 
 Target crypto asset/network combinations and USD funding are capability-controlled architecture. They are not production claims until the server capability registry, provider integration, compliance, posting and reconciliation path are certified.
 

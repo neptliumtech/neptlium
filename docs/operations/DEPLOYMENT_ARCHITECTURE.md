@@ -1,6 +1,6 @@
 # Deployment
 
-Neptlium deploys independently versioned application boundaries from `Neptliumforge/neptlium`. Current repository applications may include Web, App, Neptlium Treasury, Pay, Docs, Status, Admin, and API; deploy only applications that actually exist and are configured.
+Neptlium deploys independently versioned application boundaries from `neptliumtech/neptlium`. Current repository applications may include Web, App, Neptlium Treasury, Pay, Docs, Status, Admin, and API; deploy only applications that actually exist and are configured.
 
 ## Authentication deployment model
 
@@ -11,7 +11,7 @@ Required runtime principles:
 - Browser applications use `NEXT_PUBLIC_SUPABASE_URL` and the publishable client key only.
 - Server components use reviewed Supabase SSR/server-session helpers.
 - API verifies Supabase access tokens and resolves the immutable authenticated subject to a stable Neptlium principal.
-- No alternate runtime authentication mode is supported.
+- The standard runtime uses Supabase Auth. See [Identity](../platform/IDENTITY.md) for the isolated Clerk Preview boundary and release requirements.
 - Supabase service-role values remain server-only persistence/infrastructure authority and are never browser credentials.
 - Historical identity-provider rows may remain as migration evidence but are inert for runtime authentication.
 

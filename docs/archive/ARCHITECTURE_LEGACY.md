@@ -14,4 +14,4 @@ Neptlium is crypto-only. Planned provider-dependent assets are USDC on Base, ETH
 
 Allocation states are Observe, Model, and Authorize. Modeling does not move capital. Authorize remains unavailable until real ledger, custody, security, and execution infrastructure exists.
 
-`https://api.neptlium.com` is planned; no API application is present. See [API Foundation](API_FOUNDATION.md).
+`https://api.neptlium.com` is planned; no API application is present. See [current API architecture](../architecture/API.md).

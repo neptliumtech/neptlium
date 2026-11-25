@@ -16,7 +16,7 @@ Deposit, withdrawal, webhook confirmation, balance crediting, and allocation exe
 
 ## Review and rollback
 
-Validate against a disposable local database or staging first. Review the dry-run before any remote apply. The rollback script is [`rollback-production-containment.sql`](./rollback-production-containment.sql). It deliberately restores unsafe pre-containment capabilities and must only be run in a maintenance window after incident-owner and security approval.
+Validate against a disposable local database or staging first. Review the dry-run before any remote apply. The rollback script is [`rollback-production-containment.sql`](../../security/rollback-production-containment.sql). It deliberately restores unsafe pre-containment capabilities and must only be run in a maintenance window after incident-owner and security approval.
 
 Suggested staging sequence:
 

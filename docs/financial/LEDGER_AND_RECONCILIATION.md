@@ -1,6 +1,6 @@
 # Ledger and Reconciliation
 
-**TRANSITION (local, unreleased):** [Gate 01B](../engineering/proposals/gate-01b/README.md) prepares forward-only integer/null/network-balance/grant hardening and fenced webhook consumption outside the migration directory. These proposals and their isolated database tests have not been executed. Existing canonical balance code also requires the initialization/aggregation dependencies from PR #137; migration presence and local code do not establish applied production state.
+**TRANSITION (local, unreleased):** [Gate 01B](../engineering/proposals/gate-01b/README.md) prepares forward-only integer/null/network-balance/grant hardening and fenced webhook consumption outside the migration directory. These proposals and their isolated database tests have not been executed. The tracked [canonical initialization migration](../../supabase/migrations/20261021200000_canonical_capital_ledger_initialization.sql) defines the initialization and aggregation dependency. Applied production state requires separate verification.
 
 The Neptlium ledger is canonical financial truth only when entries are validly created through reviewed workflows. Provider systems supply evidence; they do not replace the ledger.
 
