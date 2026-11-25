@@ -16,7 +16,7 @@ Public health/status/version routes do not establish user authority.
 
 Customer and operator bearer tokens are Supabase Auth access tokens. `apps/api` verifies the authenticated Supabase subject, resolves the active `SUPABASE_AUTH` mapping to a stable Neptlium principal, and performs Neptlium-owned authorization from that principal.
 
-The standard router uses Supabase Auth. The isolated Clerk Preview middleware is described in [Identity](../platform/IDENTITY.md).
+The router uses Supabase Auth as its sole authentication authority. See [Identity](../platform/IDENTITY.md).
 
 Service-role credentials are confined to the API/dedicated server clients. A bearer token, UI role, email address, user-editable metadata, or caller-supplied owner ID never bypasses resource ownership and policy checks.
 

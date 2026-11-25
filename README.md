@@ -63,13 +63,13 @@ Canonical Ledger / Customer Projection
 
 ## Identity and infrastructure direction
 
-**Clerk is the designated customer authentication provider** for sign-in, sign-up, sessions, MFA, and recovery. **Supabase remains the PostgreSQL and persistence platform**, including application data, migrations, constraints, and row-level security.
+**Supabase Auth is the sole authentication and session authority** for customer and operator surfaces. Supabase also provides PostgreSQL persistence, migrations, constraints and row-level security.
 
-**Current runtime:** The merged Capital entry pages and standard API bearer authentication still use Supabase Auth. Clerk cutover and Preview verification code exist as bounded foundations. A Production instance in Clerk does not establish application activation. See [Identity](docs/platform/IDENTITY.md) for ownership and release evidence.
+**Current runtime:** Capital entry pages and standard API bearer authentication use Supabase Auth. Deployment continuity requires separate verification. See [Identity](docs/platform/IDENTITY.md).
 
 The API must independently verify identity tokens and resolve them to a stable Neptlium principal. Account ownership is never inferred from email matching, browser claims, or provider sessions alone. Admin and Treasury identity boundaries require separate verification.
 
-See [Provider architecture](docs/platform/PROVIDERS.md) and [Clerk migration contract](docs/security/clerk-primary-auth-migration.md).
+See [Provider architecture](docs/platform/PROVIDERS.md).
 
 ## Core invariants
 
@@ -108,7 +108,6 @@ Start at [Documentation index](docs/README.md). Key references:
 - [Provider architecture](docs/platform/PROVIDERS.md)
 - [Security policy](SECURITY.md)
 - [Deployment operations](docs/operations/DEPLOYMENT.md)
-- [Clerk migration safety contract](docs/security/clerk-primary-auth-migration.md)
 
 Product, financial-domain, architecture, and design-system specifications are indexed in `docs/README.md`.
 
@@ -122,7 +121,7 @@ See [Deployment operations](docs/operations/DEPLOYMENT.md).
 
 ## Security
 
-Never commit credentials, Clerk secret keys, Supabase service-role keys, provider tokens, wallet signing material, or production session tokens. Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
+Never commit credentials, Supabase service-role keys, provider tokens, wallet signing material, or production session tokens. Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
 
 ---
 
