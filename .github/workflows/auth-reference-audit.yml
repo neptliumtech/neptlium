@@ -18,5 +18,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Enforce fail-closed Clerk Preview and cutover guards
+      - name: Enforce sole Supabase authentication source contract
         run: node scripts/retired-auth-contract.mjs
