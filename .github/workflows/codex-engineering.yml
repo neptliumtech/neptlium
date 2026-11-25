@@ -1,0 +1,69 @@
+name: Codex Engineering Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Reviewed engineering task
+        type: choice
+        options:
+          - smoke
+          - release-gate-01
+        default: smoke
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: codex-engineering
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Collect bounded GitHub evidence
+        if: inputs.task == 'release-gate-01'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/neptlium-evidence
+          git rev-parse HEAD > /tmp/neptlium-evidence/sha
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title,headRefName,headRefOid,baseRefName,isDraft,mergeStateStatus,url > /tmp/neptlium-evidence/prs.json || { rm -f /tmp/neptlium-evidence/prs.json; echo BLOCKED > /tmp/neptlium-evidence/pr-status; }
+      - name: Prepare reviewed prompt
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          case "$TASK" in
+            smoke) printf '%s\n' 'Read AGENTS.md and report the checkout SHA and repository name. Do not edit files or access credentials. Stop immediately.' > /tmp/neptlium-prompt.md ;;
+            release-gate-01) cp scripts/codex/prompts/release-acceleration-gate-01.md /tmp/neptlium-prompt.md
+              printf '\nGitHub evidence: /tmp/neptlium-evidence/ (maximum 100 open PRs; completeness beyond this limit unverified).\n' >> /tmp/neptlium-prompt.md ;;
+            *) exit 1 ;;
+          esac
+      - name: Run Codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: /tmp/neptlium-prompt.md
+          output-file: /tmp/neptlium-report.md
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          effort: medium
+      - name: Verify checkout unchanged
+        if: always()
+        run: |
+          test -z "$(git status --porcelain)"
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-engineering-report
+          path: /tmp/neptlium-report.md
+          if-no-files-found: error
+          retention-days: 7
