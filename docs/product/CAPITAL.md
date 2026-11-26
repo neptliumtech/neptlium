@@ -107,7 +107,7 @@ Activity, Documents, Notifications, and Settings preserve API authority while sh
 
 ## Deposit architecture
 
-Deposit is a first-class workflow. The server contracts are defined in [`16_DEPOSIT_AND_ACCOUNT_FUNDING_ARCHITECTURE.md`](./16_DEPOSIT_AND_ACCOUNT_FUNDING_ARCHITECTURE.md).
+Deposit is a first-class workflow. The server contracts are defined in [Funding](../financial/FUNDING.md).
 
 The product must never expose a crypto address, fiat funding method, asset/network combination, or Stripe flow unless the API reports a verified capability for the current user and environment.
 

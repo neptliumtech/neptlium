@@ -13,6 +13,12 @@ This applies to:
 
 Browser applications use only the Supabase project URL and publishable client key. Service-role credentials remain server-only.
 
+## Clerk transition
+
+Clerk is the approved customer identity direction. The connected Clerk application listed development and production instances on 2026-11-23. Activation at the Capital domain remains unverified. The merged [sign-in](../../apps/app/app/auth/sign-in/page.tsx) and [sign-up](../../apps/app/app/auth/sign-up/page.tsx) pages render Supabase forms. The [production cutover evaluator](../../apps/app/lib/clerk-cutover.ts) is a gate helper. Its existence and flags alone do not switch those pages.
+
+The isolated [Preview middleware](../../apps/api/src/clerk-preview-middleware.ts) verifies a Clerk bearer before consulting the [durable identity store](../../apps/api/src/clerk-preview-identity.ts). That store requires a unique active Clerk mapping, an active principal and an active membership tied to the same principal through its Supabase subject. Preview evidence must identify the deployment, issuer and tenant. Standard [API authentication](../../apps/api/src/authentication.ts) still resolves `SUPABASE_AUTH`. Existing account linking requires verified proof of control. Email equality cannot establish ownership.
+
 ## Identity model
 
 Authentication and business identity remain separate concepts.
@@ -30,7 +36,7 @@ Existing principal UUIDs and financial ownership must be preserved. Authenticati
 
 For existing accounts, the active Supabase Auth subject must resolve deterministically to the preserved Neptlium principal. Ambiguous, conflicting, missing, suspended, or retired mappings fail closed.
 
-Historical identity-provider mapping rows may remain as inert migration/audit evidence. They are not accepted runtime credentials unless the current runtime explicitly supports that provider; currently only `SUPABASE_AUTH` is supported.
+Historical identity-provider mapping rows may remain as inert migration/audit evidence. They are not accepted runtime credentials unless the current runtime explicitly supports that provider; the standard runtime accepts `SUPABASE_AUTH`.
 
 Email may assist account communication and onboarding but must not be used as privileged authorization or as a substitute for immutable subject identity.
 

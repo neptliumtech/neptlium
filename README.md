@@ -1,7 +1,7 @@
 # Neptlium
 
 **Capital Operating Platform**  
-*Capital, intelligently managed.*
+_Capital, intelligently managed._
 
 Neptlium is an operating layer for individual and organizational capital: positions, movements, evidence, policy, and financial operations across governed workflows.
 
@@ -9,18 +9,20 @@ Neptlium is an operating layer for individual and organizational capital: positi
 
 **Production:** [neptlium.com](https://neptlium.com) · **Capital application:** [app.neptlium.com](https://app.neptlium.com)
 
+Start with [developer onboarding](docs/engineering/DEVELOPMENT.md), the [surface inventory](docs/product/SURFACES.md), and the [agent contract](AGENTS.md). The canonical integration branch is `main` in `neptliumtech/neptlium`.
+
 ## Platform surfaces
 
-| Surface | Responsibility |
-| --- | --- |
-| Web | Public product experience and discovery |
-| Capital (`apps/app`) | Individual capital operating experience |
-| Treasury | Organizational capital operations |
-| Admin | Restricted internal operations, governance, and controls |
-| API (`apps/api`) | Identity-aware platform and financial-domain APIs |
-| Pay | Payment presentation and approved payment journeys |
-| Docs | Developer and integration documentation |
-| Status | Service availability and operational communications |
+| Surface              | Responsibility                                           |
+| -------------------- | -------------------------------------------------------- |
+| Web                  | Public product experience and discovery                  |
+| Capital (`apps/app`) | Individual capital operating experience                  |
+| Treasury             | Organizational capital operations                        |
+| Admin                | Restricted internal operations, governance, and controls |
+| API (`apps/api`)     | Identity-aware platform and financial-domain APIs        |
+| Pay                  | Payment presentation and approved payment journeys       |
+| Docs                 | Developer and integration documentation                  |
+| Status               | Service availability and operational communications      |
 
 A surface being present in the repository does **not** certify that a particular financial capability is enabled or production-ready.
 
@@ -63,7 +65,7 @@ Canonical Ledger / Customer Projection
 
 **Clerk is the designated customer authentication provider** for sign-in, sign-up, sessions, MFA, and recovery. **Supabase remains the PostgreSQL and persistence platform**, including application data, migrations, constraints, and row-level security.
 
-**Migration status:** Clerk is the *target architecture*, not a completed production cutover. Existing customer application and API authentication paths still depend on Supabase Auth. The `feat/clerk-primary-auth-migration` branch contains Preview verification foundations; full Clerk SDK integration, verified identity linking, database authorization tests, rollback, and production certification remain required. Do not interpret this README as approval to disable Supabase Auth or delete legacy user references.
+**Current runtime:** The merged Capital entry pages and standard API bearer authentication still use Supabase Auth. Clerk cutover and Preview verification code exist as bounded foundations. A Production instance in Clerk does not establish application activation. See [Identity](docs/platform/IDENTITY.md) for ownership and release evidence.
 
 The API must independently verify identity tokens and resolve them to a stable Neptlium principal. Account ownership is never inferred from email matching, browser claims, or provider sessions alone. Admin and Treasury identity boundaries require separate verification.
 
@@ -81,7 +83,7 @@ See [Provider architecture](docs/platform/PROVIDERS.md) and [Clerk migration con
 
 ## Local development
 
-Use a supported Node.js runtime and the repository-pinned pnpm version. Install from the monorepo root:
+Use the Node.js version configured for the relevant CI job and the repository-pinned pnpm version in `package.json`. Install from the monorepo root:
 
 ```bash
 pnpm install --frozen-lockfile

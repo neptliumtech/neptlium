@@ -6,7 +6,10 @@ Decision (2026-11-20): Adopt Clerk as the production customer authentication pro
 
 Verified deployment evidence: Vercel Preview deployment `dpl_FLMKebfHUVZArwUDmvadyogL2RwH` of commit `f87556207bc6c1ad2a1d23893e17fb46ae25d8cc` is READY. This is a build result only: deployed sign-in/sign-up still use Supabase Auth. The GitHub repository is now `neptliumtech/neptlium` and Vercel accepted its Git source.
 
-## Verified production defect
+This is a dated decision and implementation record. For current authority and evidence, see [Identity](IDENTITY.md).
+
+## Verified production defect at the time of inspection
+
 - `app.neptlium.com/auth/sign-up` displays the generic account-creation error.
 - On `main`, `apps/app/app/auth/sign-up/page.tsx` and sign-in import `SupabaseAuthForm`.
 - `SupabaseAuthForm` invokes `supabase.auth.signUp`, logs only the error code to the browser console, and replaces the failure with the observed generic text.
@@ -15,7 +18,8 @@ Verified deployment evidence: Vercel Preview deployment `dpl_FLMKebfHUVZArwUDmva
 - Existing PR #158 is a fail-closed principal identity gate, **not** a complete production onboarding cutover.
 
 ## Implementation sequence (production-targeted, validated before release)
-1. Rebase/cherry-pick *reviewed individual changes*, not the stale cutover branch. Reconcile with PR #158 and the existing independent JWT verifier, durable principal mapping and tenant membership authorization.
+
+1. Rebase/cherry-pick _reviewed individual changes_, not the stale cutover branch. Reconcile with PR #158 and the existing independent JWT verifier, durable principal mapping and tenant membership authorization.
 2. Pin `@clerk/nextjs` to a reviewed version compatible with Next.js 16 and update the workspace lockfile. Verify Clerk's current documentation and security advisories before release.
 3. Add ClerkProvider and Next.js proxy/middleware to the app without regressing theme, runtime-config checks, public routes or protected-route fail-closed behavior.
 4. Replace the SupabaseAuthForm entry pages with Clerk SignIn/SignUp, preserving validated internal redirect destinations and never accepting open redirects.
@@ -27,6 +31,7 @@ Verified deployment evidence: Vercel Preview deployment `dpl_FLMKebfHUVZArwUDmva
 10. Require reviewed evidence, a backup/recovery plan and explicit production approval before any production promotion or auth-data migration.
 
 ## Release blockers
+
 - No successful registration or authenticated dashboard verification.
 - Preview Clerk credentials not confirmed; production-scoped keys do not make Preview Clerk authentication functional.
 - GitHub/Vercel integration and Preview build are verified, but end-to-end authentication is not.

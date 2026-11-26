@@ -75,7 +75,6 @@ Every provider adapter must:
 
 Provider selection is capability- and policy-driven, never hard-coded as financial truth in the UI. A configured provider can still be unavailable, degraded, restricted or ineligible for a specific principal, jurisdiction, asset, amount or operation.
 
-
 ## Execution-provider boundary
 
 Execution venues use a separate API-owned execution domain; they do not implement or extend the custody/funding-oriented `CapitalProvider` contract. Execution provider identity is not capability. Provider orders, fills, positions, collateral, account state, stream events, and submission responses remain provider evidence until the applicable Neptlium authorization, reservation, normalization, reconciliation, and canonical financial workflows establish their effect.
@@ -94,22 +93,18 @@ Provider
 != Financial truth
 ```
 
-Current and planned provider classification is:
+The [capability registry](CAPABILITIES.md) owns the current provider inventory, implementation state and environment-specific evidence. Include a concrete repository consumer or connected infrastructure observation before adding a provider.
 
-| Provider | Category | Repository state |
+### Public disclosure classifications
+
+These statements are consumed by Web's legal disclosure checks. See the registry for operational status and prerequisites.
+
+<!-- prettier-ignore -->
+| Provider | Category | Public disclosure boundary |
 | --- | --- | --- |
-| Clerk | Customer Identity Infrastructure | Canonical target; Preview foundations exist; production cutover not certified |\n| Supabase Auth | Legacy Identity Infrastructure | Current runtime and user-ID dependencies; retirement in progress |
-| Supabase/PostgreSQL | Persistence Infrastructure | Current |
-| Stripe | Payment / Billing Infrastructure | Current subscription-billing webhook ingress; not live Capital funding |
-| Circle | Custody / Wallet Infrastructure | Current adapter/source support; capability remains gated |
-| Alchemy | Blockchain Observation Infrastructure | Current observation/RPC infrastructure where configured |
 | Resend | Communication Infrastructure | Unsupported; no current integration |
 | Mercury | Banking Infrastructure | Unsupported; no current integration |
-| Hyperliquid | Execution Infrastructure | Planned; no current integration |
-| Aster | Execution Infrastructure | Planned; no current integration |
-| Vercel | Deployment / Operations Infrastructure | Current deployment infrastructure; not financial authority |
-
-Planned or unsupported providers MUST NOT be documented or presented as integrated solely because they are architectural candidates.
+| Stripe | Payment / Billing Infrastructure | Subscription billing ingress; not live Capital funding |
 
 ## Domain-specific provider boundaries
 
