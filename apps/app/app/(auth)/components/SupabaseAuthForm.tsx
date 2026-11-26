@@ -140,6 +140,7 @@ export function SupabaseAuthForm({
   }
 
   const isSignIn = mode === 'sign-in';
+  const maskedEmail = pendingEmail?.replace(/^(.).*?(@[^@]+)$/, '$1•••$2');
 
   if (!isSignIn && pendingEmail) {
     return (
@@ -149,7 +150,7 @@ export function SupabaseAuthForm({
           Check your email
         </h1>
         <p className="mt-2 text-sm leading-6 text-text-secondary" role="status">
-          If <strong className="font-medium text-text-primary">{pendingEmail}</strong> can be used
+          If <strong className="font-medium text-text-primary">{maskedEmail}</strong> can be used
           for a new account, we sent a confirmation email. Enter the code if your email includes one,
           or open its confirmation link in this browser.
         </p>
@@ -163,12 +164,11 @@ export function SupabaseAuthForm({
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="[0-9]{6}"
-            maxLength={6}
             required
             value={code}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'signup-code-error' : undefined}
-            onChange={(event) => setCode(event.target.value)}
+            onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
           />
           {error ? <p id="signup-code-error" role="alert" className="text-sm text-status-error">{error}</p> : null}
           <button className="w-full rounded-[10px] bg-accent-primary px-4 py-3 text-sm font-semibold text-black disabled:opacity-60" disabled={submitting || resending} type="submit">
@@ -219,7 +219,7 @@ export function SupabaseAuthForm({
               }}
               type="button"
             >
-              Use a different email
+              Change email
             </button>
           </p>
         </div>
@@ -236,7 +236,7 @@ export function SupabaseAuthForm({
       <p className="mt-2 text-sm leading-6 text-text-secondary">
         {isSignIn
           ? 'Access your portfolio, capital and account activity.'
-          : 'Create your account with an email address and a password of at least 8 characters. Then confirm your email to continue.'}
+          : 'Create your Neptlium account with email and password. Use at least 8 characters, then confirm your email to continue.'}
       </p>
 
       <form className="mt-7 space-y-5" onSubmit={submit}>
