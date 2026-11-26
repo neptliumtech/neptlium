@@ -124,7 +124,7 @@ test('canonical public navigation uses progressive product discovery', () => {
     assert.match(architecture, new RegExp(label));
   for (const route of ['/capital','/portfolio','/investments','/treasury','/intelligence','/infrastructure'])
     assert.match(architecture, new RegExp(route.replaceAll('/', '\\\/')));
-  assert.match(header, /Sign up/);
+  assert.match(header, /Get started/);
   assert.match(header, /data-surface=/);
   assert.match(header, /window\.scrollY > 18/);
   assert.match(mobile, /document\.body\.style\.overflow = 'hidden'/);
@@ -161,11 +161,11 @@ test('supporting public routes are calibrated back to the Geist-led production f
 
 test('marketing typography inherits Treasury sans authority without changing the brand asset', () => {
   assert.match(shell, /--font: var\(--font-sans\)/);
-  assert.match(shell, /body \{ font-family: var\(--font-sans\); \}/);
+  assert.match(shell, /body \{[\s\S]*?font-family:\s*var\(--font\);/);
   assert.match(shell, /--web-type-heading-track: -0\.047em/);
   assert.match(shell, /font-variant-numeric: tabular-nums/);
   assert.match(header, /<Brand tone="teal" \/>/);
-  assert.match(header, /Sign up/);
+  assert.match(header, /Get started/);
 });
 
 
