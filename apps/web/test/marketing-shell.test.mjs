@@ -49,6 +49,7 @@ test('navigation exposes canonical product discovery hierarchy', () => {
     assert.match(architecture, new RegExp(`label: '${capability}'`));
   assert.match(header, /NAVIGATION\.map/);
   assert.match(header, /aria-label="Primary navigation"/);
+  assert.match(architecture, /label: 'Products',[\\s\\S]*?href: '\/platform'/);
 });
 
 test('footer exposes canonical directory, legal and real status destinations', () => {
