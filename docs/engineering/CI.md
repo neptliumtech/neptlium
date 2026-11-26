@@ -21,3 +21,19 @@ Main-branch protection should require stable applicable checks only after their 
 Manual dispatch on main only: `gh workflow run codex-engineering.yml -R neptliumtech/neptlium --ref main -f task=smoke`. After a successful smoke test, use `task=release-gate-01`. Download the report with `gh run download RUN_ID -R neptliumtech/neptlium -n codex-engineering-report`.
 
 The runner uses an isolated hosted Linux job, the official Codex action, read-only sandbox, drop-sudo, nonpersistent checkout credentials, and an API key scoped to the action step. No deployment, database, provider or write authority is granted. Reports are retained seven days; access follows repository artifact permissions. Review reports before sharing. The workflow uses major-version action tags; immutable pinning and runtime validation remain review requirements. Medium reasoning and a 30-minute timeout limit execution duration, not API spend. GitHub metadata is bounded and live provider evidence is unavailable. Do not treat an audit as release certification.
+
+### Runner V2 synthetic checkpoint prototype
+
+`scripts/codex/checkpoint.mjs` records task identity, exact source revision,
+ordered step outcomes, retry counts, and review readiness in a local JSON
+checkpoint. The checkpoint must be owned by one caller at a time. Keep it in
+an isolated directory writable only to the runner. Steps must be idempotent
+because an interrupted step may be repeated. A changed source revision
+requires a fresh checkpoint and validation.
+
+Run `node --test scripts/codex/test/checkpoint.test.mjs` for a credential-free
+rehearsal. The prototype consumes no API credits and has no publication
+permissions. The existing runner's `synthetic-checkpoint` dispatch rehearses
+artifact handoff between two five-minute jobs and publishes a review checkpoint
+without invoking the Codex action. Paid usage metering and executive dispatch
+remain integration work.
