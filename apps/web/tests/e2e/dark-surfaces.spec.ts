@@ -94,11 +94,13 @@ for (const route of routes) {
           fullPage: true,
           animations: 'disabled',
         });
-        // The infrastructure capability disclosures intentionally changed the rendered copy
-        // and card heights. Preserve fresh visual evidence and semantic/contrast assertions;
-        // do not compare against the pre-disclosure full-page baseline.
-        expect(visualEvidence.byteLength).toBeGreaterThan(10_000);
-        expect(await family.boundingBox()).not.toBeNull();
+        // Compare the rendered capability surface against the reviewed, route-specific
+        // Playwright baseline. The infrastructure baseline was refreshed for the approved
+        // disclosure/table expansion; the intelligence baseline remains unchanged.
+        await expect(family).toHaveScreenshot(`${slug}-${preference}.png`, {
+          animations: 'disabled',
+          maxDiffPixelRatio: 0.005,
+        });
       }
       if (preference === 'system') {
         await page.emulateMedia({ colorScheme: 'light' });
