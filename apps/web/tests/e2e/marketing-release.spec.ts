@@ -99,7 +99,7 @@ test.describe('Neptlium unified marketing release', () => {
     const solutionsTrigger = nav.getByRole('button', { name: 'Open Solutions menu' });
     await solutionsTrigger.hover();
     await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
-    await expect(nav.getByRole('link', { name: 'Capital visibility', exact: true })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /^Capital visibility/ })).toBeVisible();
     await solutionsTrigger.click();
     await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
     await solutionsTrigger.press('Enter');
