@@ -52,7 +52,7 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
             <h2>{activeSection}</h2>
             <div className="mobile-nav-detail-links">
               {NAVIGATION.find((section) => section.label === activeSection)?.links.map((link) => (
-                <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href ? 'page' : undefined}>
+                <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href || path.startsWith(`${link.href}/`) ? 'page' : undefined}>
                   <span>{link.label}<small>{link.description}</small></span><ArrowUpRight aria-hidden="true" />
                 </Link>
               ))}
