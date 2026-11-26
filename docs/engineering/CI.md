@@ -33,5 +33,7 @@ requires a fresh checkpoint and validation.
 
 Run `node --test scripts/codex/test/checkpoint.test.mjs` for a credential-free
 rehearsal. The prototype consumes no API credits and has no publication
-permissions. Hosted artifact transfer, wall-clock enforcement, usage metering,
-and executive dispatch remain integration work for the existing runner.
+permissions. The existing runner's `synthetic-checkpoint` dispatch rehearses
+artifact handoff between two five-minute jobs and publishes a review checkpoint
+without invoking the Codex action. Paid usage metering and executive dispatch
+remain integration work.
