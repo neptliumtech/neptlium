@@ -56,7 +56,7 @@ Illustrative product states must be labeled whenever they could be mistaken for 
 
 ## Navigation and footer
 
-Every top-level domain is a real link. `Sign in` and `Get started` may expose a product chooser rather than guessing account type. Mobile navigation requires large targets, body-scroll lock, focus containment/restoration, Escape close and route-close behavior.
+Every top-level domain is a real link. The primary desktop navigation is solutions-first; grouped dropdowns preserve a real overview link and a separate trigger. Desktop menus support mouse hover, touch click, keyboard focus, Escape dismissal, outside-pointer dismissal and route-close behavior. `Talk to Neptlium` routes to `/contact`; do not invent a sales mailbox or response commitment. `Sign in` and `Get started` may expose a product chooser rather than guessing account type. Mobile navigation is a full-screen drill-down with predictable back navigation, large targets, body-scroll lock, focus containment/restoration, Escape close, safe-area spacing and direct Capital, Treasury and contact entry points.
 
 Footer exposes only real routes and approved product destinations, plus concise disclosure.
 
