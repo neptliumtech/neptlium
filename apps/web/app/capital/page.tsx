@@ -31,7 +31,7 @@ function CapitalCorePage() {
           </div>
         </div>
         <div className={styles.workspace} aria-label="Illustrative personal capital workspace">
-          <div className={styles.workspaceBar}><span>Capital overview</span><span className={styles.workspaceDots}><span /><span /><span /></span></div>
+          <div className={styles.workspaceBar}><span>Capital overview · illustrative</span><span className={styles.workspaceDots}><span /><span /><span /></span></div>
           <div className={styles.workspaceBody}>
             <div className={styles.capitalOverview}>
               <div className={styles.accountBlock}>
