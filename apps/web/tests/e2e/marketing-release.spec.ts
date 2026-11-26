@@ -130,8 +130,13 @@ test.describe('Neptlium unified marketing release', () => {
     const dialog = page.getByRole('dialog', { name: 'Navigation' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Products' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Explore Products' }).click();
+    await expect(dialog.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/platform');
+    await dialog.getByRole('button', { name: 'Back to main navigation' }).click();
+    await dialog.getByRole('button', { name: 'Explore Solutions' }).click();
+    await expect(dialog.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/solutions');
+    await dialog.getByRole('button', { name: 'Back to main navigation' }).click();
     await dialog.getByRole('button', { name: 'Explore Institutional' }).click();
     await expect(dialog.getByRole('heading', { name: 'Institutional' })).toBeVisible();
     await expect(dialog.getByRole('link', { name: /Institutional/ })).toBeVisible();
@@ -149,7 +154,6 @@ test.describe('Neptlium unified marketing release', () => {
       'href',
       businessAppUrl,
     );
-    await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
     await expectNoHorizontalOverflow(page);
