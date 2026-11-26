@@ -42,6 +42,8 @@ test('mobile menu exposes canonical product discovery and commercial contact', (
   assert.match(mobile, /href=\{SITE\.personalSignUpUrl\}>Get started/);
   assert.match(mobile, /mobile-nav-back/);
   assert.match(mobile, /setActiveSection/);
+  assert.match(mobile, /mobile-nav-overview/);
+  assert.match(mobile, /activeNavigation\\.href/);
   assert.match(mobile, /mobile-contact-action/);
   assert.match(mobile, /SITE\.businessAppUrl/);
   assert.match(footer, /\['Trust', '\/trust'\]/);
