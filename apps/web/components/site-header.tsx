@@ -21,6 +21,7 @@ export function SiteHeader() {
   const [topSurface, setTopSurface] = useState<MarketingSurface>('carbon');
   const trigger = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const lastPointerType = useRef<string | null>(null);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -78,7 +79,13 @@ export function SiteHeader() {
       >
         <div className="nav-shell">
           <Brand tone="teal" />
-          <nav ref={navRef} className="desktop-command-nav" aria-label="Primary navigation">
+          <nav
+            ref={navRef}
+            className="desktop-command-nav"
+            aria-label="Primary navigation"
+            onPointerDownCapture={(event) => { lastPointerType.current = event.pointerType; }}
+            onKeyDownCapture={() => { lastPointerType.current = null; }}
+          >
             {NAVIGATION.map((item) => {
               const hasMenu = item.links.length > 1;
               const menuId = `command-nav-menu-${item.label.toLowerCase()}`;
@@ -86,11 +93,17 @@ export function SiteHeader() {
                 <div
                   className="command-nav-group"
                   key={item.label}
-                  onMouseEnter={() => hasMenu && setOpenMenu(item.label)}
-                  onMouseLeave={(event) => {
-                    if (!event.currentTarget.contains(document.activeElement)) setOpenMenu(null);
+                  onPointerEnter={(event) => {
+                    if (hasMenu && event.pointerType === 'mouse') setOpenMenu(item.label);
                   }}
-                  onFocusCapture={() => hasMenu && setOpenMenu(item.label)}
+                  onPointerLeave={(event) => {
+                    if (event.pointerType === 'mouse' && !event.currentTarget.contains(document.activeElement)) {
+                      setOpenMenu(null);
+                    }
+                  }}
+                  onFocusCapture={() => {
+                    if (hasMenu && lastPointerType.current !== 'touch') setOpenMenu(item.label);
+                  }}
                   onBlurCapture={(event) => {
                     const nextTarget = event.relatedTarget as Node | null;
                     if (!nextTarget || !event.currentTarget.contains(nextTarget)) setOpenMenu(null);
@@ -112,7 +125,10 @@ export function SiteHeader() {
                       aria-expanded={openMenu === item.label}
                       aria-controls={menuId}
                       data-menu-trigger={item.label}
-                      onClick={() => setOpenMenu((current) => current === item.label ? null : item.label)}
+                      onClick={() => {
+                        lastPointerType.current = null;
+                        setOpenMenu((current) => current === item.label ? null : item.label);
+                      }}
                     >
                       <ChevronDown aria-hidden="true" />
                     </button>
