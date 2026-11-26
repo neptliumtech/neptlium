@@ -20,7 +20,8 @@ export function SupabaseAuthForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [resending, setResending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
@@ -40,27 +41,61 @@ export function SupabaseAuthForm({
   }
 
   async function resendConfirmation() {
-    if (!pendingEmail || resendIn > 0) return;
+    if (!pendingEmail || resendIn > 0 || resending || submitting) return;
+    setResending(true);
     setResendStatus(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error: resendError } = await supabase.auth.resend({
-      type: 'signup',
-      email: pendingEmail,
-      options: { emailRedirectTo: confirmationRedirect() },
-    });
-    setResendIn(RESEND_COOLDOWN_SECONDS);
-    // Supabase does not reveal whether an address is registered; neither does this message.
-    setResendStatus(
-      resendError?.status === 429
-        ? 'Too many requests. Wait a minute, then try again.'
-        : 'If a confirmation is waiting for this address, we sent a new email.',
-    );
+    try {
+      const { error: resendError } = await createSupabaseBrowserClient().auth.resend({
+        type: 'signup',
+        email: pendingEmail,
+        options: { emailRedirectTo: confirmationRedirect() },
+      });
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setResendStatus(
+        resendError?.status === 429
+          ? 'Too many requests. Wait a minute, then try again.'
+          : 'If a confirmation is waiting for this address, a new email should arrive shortly.',
+      );
+    } catch {
+      setResendStatus('We could not reach the email service. Try again.');
+    } finally {
+      setResending(false);
+    }
+  }
+
+  async function verifyCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pendingEmail || submitting || resending) return;
+    setError(null);
+    if (!/^\d{6}$/.test(code)) {
+      setError('Enter the six-digit code from your email.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data, error: verificationError } = await createSupabaseBrowserClient().auth.verifyOtp({
+        email: pendingEmail,
+        token: code,
+        type: 'email',
+      });
+      if (verificationError || !data.session) {
+        setError(verificationError?.status === 429
+          ? 'Too many attempts. Wait before trying again.'
+          : 'This code is invalid or has expired. Check the latest email or request a new code.');
+        return;
+      }
+      router.replace(destination);
+      router.refresh();
+    } catch {
+      setError('We could not reach the verification service. Try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setNotice(null);
     setSubmitting(true);
     try {
       const supabase = createSupabaseBrowserClient();
@@ -96,12 +131,16 @@ export function SupabaseAuthForm({
       setPendingEmail(email.trim());
       setResendIn(RESEND_COOLDOWN_SECONDS);
       setResendStatus(null);
+      setPassword('');
+    } catch {
+      setError('We could not reach the authentication service. Try again.');
     } finally {
       setSubmitting(false);
     }
   }
 
   const isSignIn = mode === 'sign-in';
+  const maskedEmail = pendingEmail?.replace(/^(.).*?(@[^@]+)$/, '$1•••$2');
 
   if (!isSignIn && pendingEmail) {
     return (
@@ -111,13 +150,33 @@ export function SupabaseAuthForm({
           Check your email
         </h1>
         <p className="mt-2 text-sm leading-6 text-text-secondary" role="status">
-          If <strong className="font-medium text-text-primary">{pendingEmail}</strong> can be used
-          for a new account, we sent a link to confirm it. Open the link on this device and browser
-          to finish creating your account.
+          If <strong className="font-medium text-text-primary">{maskedEmail}</strong> can be used
+          for a new account, we sent a confirmation email. Enter the code if your email includes one,
+          or open its confirmation link in this browser.
         </p>
+        <form className="mt-6 space-y-3" onSubmit={verifyCode}>
+          <label className="block text-sm text-text-secondary" htmlFor="signup-email-code">
+            Email verification code
+          </label>
+          <input
+            className="w-full rounded-[10px] border border-border-default bg-surface-0 px-3.5 py-3 text-text-primary"
+            id="signup-email-code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            required
+            value={code}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'signup-code-error' : undefined}
+            onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+          />
+          {error ? <p id="signup-code-error" role="alert" className="text-sm text-status-error">{error}</p> : null}
+          <button className="w-full rounded-[10px] bg-accent-primary px-4 py-3 text-sm font-semibold text-black disabled:opacity-60" disabled={submitting || resending} type="submit">
+            {submitting ? 'Verifying…' : 'Verify email'}
+          </button>
+        </form>
         <div className="mt-5 rounded-[10px] border border-border-hairline bg-surface-0 p-4 text-sm leading-6 text-text-secondary">
           <p className="font-medium text-text-primary">Already have a Neptlium account?</p>
-          <p className="mt-1">No email is sent for an address that is already registered.</p>
           <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
             <Link
               className="font-medium text-[#35D5C1] underline-offset-4 hover:underline"
@@ -136,11 +195,11 @@ export function SupabaseAuthForm({
         <div className="mt-6 space-y-3">
           <button
             className="w-full rounded-[10px] border border-border-default px-4 py-3 text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={resendIn > 0}
+            disabled={resendIn > 0 || resending || submitting}
             onClick={resendConfirmation}
             type="button"
           >
-            {resendIn > 0 ? `Resend email in ${resendIn}s` : 'Resend email'}
+            {resending ? 'Sending…' : resendIn > 0 ? `Resend email in ${resendIn}s` : 'Resend email'}
           </button>
           {resendStatus ? (
             <p className="text-sm text-text-secondary" role="status">
@@ -151,13 +210,16 @@ export function SupabaseAuthForm({
             Wrong address?{' '}
             <button
               className="font-medium text-[#35D5C1] underline-offset-4 hover:underline"
+              disabled={submitting || resending}
               onClick={() => {
+                setCode('');
+                setError(null);
                 setPendingEmail(null);
                 setResendStatus(null);
               }}
               type="button"
             >
-              Use a different email
+              Change email
             </button>
           </p>
         </div>
@@ -174,7 +236,7 @@ export function SupabaseAuthForm({
       <p className="mt-2 text-sm leading-6 text-text-secondary">
         {isSignIn
           ? 'Access your portfolio, capital and account activity.'
-          : 'Create your Neptlium account with email and password.'}
+          : 'Create your Neptlium account with email and password. Use at least 8 characters, then confirm your email to continue.'}
       </p>
 
       <form className="mt-7 space-y-5" onSubmit={submit}>
@@ -205,7 +267,7 @@ export function SupabaseAuthForm({
             className="mt-2 w-full rounded-[10px] border border-border-default bg-surface-0 px-3.5 py-3 text-text-primary outline-none focus:border-[#35D5C1]"
             type="password"
             autoComplete={isSignIn ? 'current-password' : 'new-password'}
-            minLength={8}
+            minLength={isSignIn ? undefined : 8}
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -214,11 +276,6 @@ export function SupabaseAuthForm({
         {error ? (
           <p className="text-sm text-status-error" role="alert">
             {error}
-          </p>
-        ) : null}
-        {notice ? (
-          <p className="text-sm text-text-secondary" role="status">
-            {notice}
           </p>
         ) : null}
         <button

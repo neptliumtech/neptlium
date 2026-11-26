@@ -117,7 +117,7 @@ test('dashboard shows non-blocking setup guidance and never redirects to onboard
   }
   assert.match(read('app/dashboard/page.tsx'), /<AccountSetupPrompt status=\{status\} \/>/);
   // Onboarding only ever redirects forward to a dashboard destination: no loop is possible.
-  assert.match(read('app/onboarding/layout.tsx'), /redirect\(await getOnboardingReturnPath\(\)\)/);
+  assert.match(read('app/onboarding/page.tsx'), /if \(profile\?\.provisionedAt\) redirect\(returnTo\)/);
   assert.match(
     read('lib/auth/return-context.ts'),
     /resolveReturnDestination\(entry\.searchParams, false\)/,

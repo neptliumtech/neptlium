@@ -12,7 +12,7 @@ Authentication emails should be restrained, transactional, and unmistakably Nept
 - system-safe typography;
 - concise subject lines and one primary action;
 - no newsletter, promotional, investment-performance, or product-sales content;
-- no sensitive session/token values rendered visibly in body copy;
+- no session tokens rendered visibly in body copy. The signup template may display the Supabase-generated single-use confirmation code;
 - accessible contrast, clear expiry/recovery language, and plain-text fallback.
 
 ## Supabase-managed flows
@@ -38,3 +38,7 @@ Use the canonical Neptlium mark with approved brand geometry. Email assets shoul
 - Redirect destinations must be approved Neptlium origins.
 - Do not create custom email-token verification logic in `apps/app` or `apps/admin` when the provider flow already owns verification.
 - Security-sensitive identity changes should use the supported Supabase Auth verification/step-up mechanisms when available and reviewed.
+
+## Signup verification
+
+The tracked Confirm Signup template supports the existing PKCE confirmation link and a six-digit Supabase email code. The App accepts the code through Supabase Auth and keeps the link callback available. Install the template in the authorized Dev project and verify SMTP sender, allowed callback origin, expiry, and provider-side resend limits before certifying delivery. The client cooldown is a user-interface guard. Supabase owns issuance, rate limits, and verification. Test actual delivery and both verification paths before promoting the template.

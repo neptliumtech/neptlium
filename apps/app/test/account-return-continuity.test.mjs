@@ -408,6 +408,7 @@ test('onboarding request context validates completion and already-provisioned se
   const page = load('app/onboarding/page.tsx', {
     '@/lib/auth': { requireUser: async () => ({ email: 'isolated@example.test' }) },
     '@/lib/auth/session': { getCurrentProfile: async () => ({ provisionedAt: 'fixture' }) },
+    '@/lib/api/client': { ApiClientError: class extends Error {} },
     '@/lib/auth/return-context': context,
     './OnboardingWizard': { OnboardingWizard: 'fixture-wizard' },
     'next/navigation': mocksForPages['next/navigation'],
@@ -415,6 +416,31 @@ test('onboarding request context validates completion and already-provisioned se
   await assert.rejects(page(), { message: `redirect:${target}` });
   header = '/onboarding?next=%2Fonboarding';
   assert.equal(await context.getOnboardingReturnPath(), '/dashboard');
+});
+
+test('onboarding keeps the form closed when the account API is unavailable', async () => {
+  class ApiClientError extends Error {
+    constructor(status) {
+      super('private upstream detail');
+      this.status = status;
+    }
+  }
+  let status = 503;
+  const page = load('app/onboarding/page.tsx', {
+    '@/lib/auth': { requireUser: async () => ({ email: 'isolated@example.test' }) },
+    '@/lib/auth/session': { getCurrentProfile: async () => { throw new ApiClientError(status); } },
+    '@/lib/auth/return-context': { getOnboardingReturnPath: async () => target },
+    '@/lib/api/client': { ApiClientError },
+    './OnboardingWizard': { OnboardingWizard: 'fixture-wizard' },
+    'next/navigation': mocksForPages['next/navigation'],
+  }).default;
+  const html = renderToStaticMarkup(await page());
+  assert.match(html, /Capital setup is unavailable/);
+  assert.match(html, /Back to dashboard/);
+  assert.doesNotMatch(html, /private upstream detail|fixture-wizard/);
+  assert.ok(html.includes('/onboarding?next=' + encodeURIComponent(target)));
+  status = 403;
+  await assert.rejects(page(), { message: 'private upstream detail' });
 });
 
 test('onboarding completes to validated destination only after successful provisioning; retry retains it', async () => {
