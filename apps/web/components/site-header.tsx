@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ChevronDown, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Brand } from './brand';
 import { MobileNavigation } from './mobile-navigation';
 import { NAVIGATION } from '@/lib/content/public-architecture';
@@ -22,6 +22,7 @@ export function SiteHeader() {
   const trigger = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const lastPointerType = useRef<string | null>(null);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -182,7 +183,7 @@ export function SiteHeader() {
         ? createPortal(
             <MobileNavigation
               path={path}
-              onClose={() => setMobileOpen(false)}
+              onClose={closeMobile}
               triggerRef={trigger}
             />,
             document.body,
