@@ -104,6 +104,10 @@ test.describe('Neptlium unified marketing release', () => {
     await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
     await solutionsTrigger.focus();
     await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('main').click({ position: { x: 8, y: 8 } });
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
+    await solutionsTrigger.focus();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Escape');
     await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(solutionsTrigger).toBeFocused();
