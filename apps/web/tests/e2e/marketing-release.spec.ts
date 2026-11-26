@@ -145,6 +145,10 @@ test.describe('Neptlium unified marketing release', () => {
       'href',
       'https://app.neptlium.com/auth/sign-in',
     );
+    await expect(dialog.getByRole('link', { name: 'Treasury access', exact: true })).toHaveAttribute(
+      'href',
+      businessAppUrl,
+    );
     await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
