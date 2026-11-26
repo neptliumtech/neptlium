@@ -26,6 +26,12 @@ function apiOrigin(): string {
   ) {
     throw new ApiClientError(503, 'invalid_api_origin', 'The Neptlium API origin is invalid.');
   }
+  if (process.env.VERCEL_ENV === 'preview' && (
+    url.protocol !== 'https:' || !url.hostname.endsWith('.vercel.app') || url.port ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') !== 'https://ntbaoylcrwkowqqvzkno.supabase.co'
+  )) {
+    throw new ApiClientError(503, 'invalid_preview_binding', 'The Preview API binding is invalid.');
+  }
   return url.origin;
 }
 
@@ -40,7 +46,14 @@ export async function apiRequest<T>(path: `/v1/${string}`, init: RequestInit = {
   const method = (init.method ?? 'GET').toUpperCase();
   const requestId = randomUUID();
 
+  const origin = apiOrigin();
   const headers = new Headers(init.headers);
+  headers.delete('x-vercel-protection-bypass');
+  if (process.env.VERCEL_ENV === 'preview') {
+    const bypass = process.env.NEPTLIUM_PREVIEW_API_BYPASS_SECRET;
+    if (!bypass) throw new ApiClientError(503, 'preview_api_not_configured', 'The protected Preview API is not configured.');
+    headers.set('x-vercel-protection-bypass', bypass);
+  }
   headers.set('accept', 'application/json');
   if (init.body && !headers.has('content-type')) {
     headers.set('content-type', 'application/json');
@@ -60,10 +73,11 @@ export async function apiRequest<T>(path: `/v1/${string}`, init: RequestInit = {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8_000);
     try {
-      const response = await fetch(`${apiOrigin()}${path}`, {
+      const response = await fetch(`${origin}${path}`, {
         ...init,
         method,
         cache: 'no-store',
+        ...(process.env.VERCEL_ENV === 'preview' ? { redirect: 'error' } : {}),
         headers,
         signal: controller.signal,
       });

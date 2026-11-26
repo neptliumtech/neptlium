@@ -225,13 +225,13 @@ export async function buildApp(deps: Dependencies = {}) {
         financialRepository.ready(),
       ]);
       const ready =
-        config.NODE_ENV !== 'production' ||
+        config.NODE_ENV === 'development' || config.NODE_ENV === 'test' ||
         (config.databaseConfigured && generalReady && financialReady);
       return {
         status: ready ? 200 : 503,
         data: {
           status: ready ? 'ready' : 'not_ready',
-          mainnet: publicFundingDefinitions().some(
+          mainnet: config.NODE_ENV !== 'preview' && publicFundingDefinitions().some(
             (definition) => definition.environment === 'LIVE' && definition.productionEnabled,
           ),
           database: generalReady ? 'ready' : 'not_ready',

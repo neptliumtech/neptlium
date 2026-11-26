@@ -9,8 +9,31 @@ function providerEnvironment(value: string | undefined, name: string): ProviderR
   return value;
 }
 
+const DEV_SUPABASE_ORIGIN = 'https://ntbaoylcrwkowqqvzkno.supabase.co';
+
+function assertPreviewIsolation(env: NodeJS.ProcessEnv) {
+  if (env.SUPABASE_URL !== DEV_SUPABASE_ORIGIN && env.SUPABASE_URL !== DEV_SUPABASE_ORIGIN + '/')
+    throw new Error('Vercel Preview requires the Dev Supabase URL');
+  if (!env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY)
+    throw new Error('Vercel Preview requires Dev Supabase credentials');
+
+  const origins = env.API_ALLOWED_ORIGINS?.split(',').map((origin) => origin.trim()) ?? [];
+  if (!origins.length || origins.some((origin) => !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)))
+    throw new Error('Vercel Preview requires explicit Vercel application origins');
+
+  const executionFlags = [
+    env.ENABLE_MAINNET, env.ENABLE_WALLET_PROVISIONING, env.ENABLE_CRYPTO_DEPOSITS,
+    env.ENABLE_CRYPTO_WITHDRAWALS, env.CIRCLE_LIVE_EXECUTION_ENABLED,
+  ];
+  if (executionFlags.includes('true') || env.CIRCLE_ENVIRONMENT === 'production' ||
+      env.ALCHEMY_ENVIRONMENT === 'production' || env.CIRCLE_WEBHOOK_ENVIRONMENT === 'production' ||
+      env.STRIPE_WEBHOOK_ENVIRONMENT === 'live')
+    throw new Error('Vercel Preview cannot enable live financial providers or execution');
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
-  const environment = env.NODE_ENV ?? 'development';
+  if (env.VERCEL_ENV === 'preview') assertPreviewIsolation(env);
+  const environment = env.VERCEL_ENV === 'preview' ? 'preview' : (env.NODE_ENV ?? 'development');
   if (!['development', 'test', 'preview', 'production'].includes(environment))
     throw new Error('Invalid API configuration: NODE_ENV');
   const port = Number(env.API_PORT ?? 3003);
@@ -35,7 +58,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     }
     return value;
   };
-  const SUPABASE_URL = validUrl(env.SUPABASE_URL, 'SUPABASE_URL');
+  const SUPABASE_URL = env.VERCEL_ENV === 'preview'
+    ? DEV_SUPABASE_ORIGIN
+    : validUrl(env.SUPABASE_URL, 'SUPABASE_URL');
   const AUTH_MODE: ApiAuthMode = 'SUPABASE';
   const ALCHEMY_RPC_URL = validUrl(env.ALCHEMY_RPC_URL, 'ALCHEMY_RPC_URL');
   if ((env.ALCHEMY_API_KEY || ALCHEMY_RPC_URL) && (!env.ALCHEMY_API_KEY || !ALCHEMY_RPC_URL || !ALCHEMY_ENVIRONMENT))
@@ -76,7 +101,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
 
   return {
     NODE_ENV: environment as Environment,
-    API_HOST: env.API_HOST ?? '0.0.0.0', API_PORT: port, API_LOG_LEVEL: env.API_LOG_LEVEL ?? 'info', API_BUILD_ID: env.API_BUILD_ID ?? 'local',
+    API_HOST: env.API_HOST ?? '0.0.0.0', API_PORT: port, API_LOG_LEVEL: env.API_LOG_LEVEL ?? 'info', API_BUILD_ID: env.API_BUILD_ID ?? env.VERCEL_GIT_COMMIT_SHA ?? 'local',
     ENABLE_MAINNET: mainnetPermitted,
     SUPABASE_URL, SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
     AUTH_MODE,
