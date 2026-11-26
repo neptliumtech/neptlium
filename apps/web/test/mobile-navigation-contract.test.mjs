@@ -56,6 +56,8 @@ test('navigation preserves safe-area, viewport fallback, forced-colors and acces
   assert.match(css, /\.elite-header-entry\{min-height:3\.25rem/);
   assert.match(css, /\.elite-menu-trigger\{width:3\.25rem;height:3\.25rem/);
   assert.match(css, /var\(--color-accent-primary\)/);
+  assert.match(css, /var\(--color-border-focus\)/);
+  assert.match(css, /var\(--color-surface-1\)/);
   assert.match(css, /height:100vh;height:100dvh/);
   assert.match(css, /forced-colors: active/);
   assert.match(css, /prefers-reduced-motion: reduce/);
