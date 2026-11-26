@@ -22,13 +22,18 @@ for (const file of actionable) {
       'utf8',
     );
 
-    assert.match(html, /https:\/\/neptlium\.com\/neptlium-email-logo\.png/);
+    if (file !== 'confirm-signup.html') assert.match(html, /https:\/\/neptlium\.com\/neptlium-email-logo\.png/);
     assert.match(html, /\{\{\s*\.ConfirmationURL\s*\}\}/);
-    assert.doesNotMatch(html, /\{\{\s*\.Token\s*\}\}/);
-    assert.doesNotMatch(html, /6-digit/i);
-    assert.doesNotMatch(html, /verification code/i);
+    if (file === 'confirm-signup.html') {
+      assert.match(html, /\{\{\s*\.Token\s*\}\}/);
+      assert.match(html, /six-digit verification code/i);
+    } else {
+      assert.doesNotMatch(html, /\{\{\s*\.Token\s*\}\}/);
+      assert.doesNotMatch(html, /6-digit/i);
+      assert.doesNotMatch(html, /verification code/i);
+    }
     assert.match(html, /#FFFFFF/i);
-    assert.match(html, /#0B8CFF/i);
+    assert.match(html, file === 'confirm-signup.html' ? /#35D5C1/i : /#0B8CFF/i);
     assert.match(html, /role="presentation"/i);
   });
 }

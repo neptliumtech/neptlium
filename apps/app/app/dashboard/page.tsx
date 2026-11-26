@@ -7,7 +7,9 @@ export default async function DashboardPage() {
   return (
     <>
       <AccountSetupPrompt status={status} />
-      <OverviewExperience />
+      <div id="capital-overview">
+        <OverviewExperience />
+      </div>
     </>
   );
 }
