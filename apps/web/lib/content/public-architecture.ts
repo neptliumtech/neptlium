@@ -211,7 +211,7 @@ export const NAVIGATION = [
   },
   {
     label: 'Products',
-    href: '/capital',
+    href: '/platform',
     description: 'Explore connected Neptlium capabilities.',
     links: PRODUCT_LINKS,
   },
