@@ -14,7 +14,7 @@ const capabilities = [
   {
     label: 'Pay',
     status: 'Product surface',
-    copy: 'Payment experiences designed around clear intent, authorization boundaries and a minimally privileged public surface.',
+    copy: 'A public payment presentation surface. The reviewed implementation does not collect payments or perform settlement; payment execution is not available through this surface.',
     href: '/payments',
     action: 'Explore payments',
   },
