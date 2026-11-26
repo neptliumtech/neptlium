@@ -64,7 +64,7 @@ Footer exposes only real routes and approved product destinations, plus concise 
 
 Every indexable page requires deliberate title, description, canonical URL, one clear H1, coherent heading order, keyboard access, visible focus, accessible names, sufficient contrast and 44px+ touch targets. Motion respects reduced-motion and must never imply financial execution or performance.
 
-Release viewports: `360, 390, 768, 1280, 1440`.
+Release viewports: `320, 360, 375, 390, 412, 430, 768, 1024, 1280, 1440, 1920`.
 
 ## CSS ownership
 
