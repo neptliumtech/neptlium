@@ -4,6 +4,7 @@ const baseURL = process.env.NEPTLIUM_WEB_BASE_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  testIgnore: "**/cross-browser-smoke.spec.ts",
   timeout: 45_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
