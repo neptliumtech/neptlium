@@ -67,6 +67,7 @@ They do not justify inventing content or adding public engineering-status copy.
 | Service availability | Product-specific jurisdictions, investment catalogue, payment methods, networks, fees, custody and regulated service statements require confirmed operational/legal authority. Product descriptions do not activate them. |
 | Support/contact operations | Support email is the existing source-defined channel. Mailbox operation and response commitments were not tested. No new SLA or security bounty is promised. |
 | Research and press assets | No original publications, testimonials, customer metrics, awards or partnership evidence supplied. Do not create fictitious proof or download links. |
+| Official social profiles | Ownership and canonical URLs have not been independently verified. Keep social destinations out of the footer and Organization `sameAs` metadata until the owner confirms each official account. |
 | Production certification | Candidate CI, preview/rendered review, governed integration and separately authorized production release are distinct from authored content. |
 
 ## Homepage continuity — owner direction, 2026-10-20
