@@ -37,7 +37,10 @@ test('mobile menu exposes canonical product discovery and direct account actions
   assert.match(mobile, /setActiveSection/);
   assert.doesNotMatch(mobile, /Socials/);
   assert.doesNotMatch(mobile, /Open Neptlium Treasury/);
-  assert.doesNotMatch(mobile, /aria-expanded/);
+  assert.match(header, /aria-expanded=\\{openMenu === item\\.label\\}/);
+  assert.match(header, /event\\.key !== 'Escape'/);
+  assert.match(header, /addEventListener\\('pointerdown'/);
+  assert.match(css, /\\.command-nav-menu\\[data-open='true'\\]/);
 });
 
 test('mobile navigation preserves visible acquisition and accessible targets', () => {
