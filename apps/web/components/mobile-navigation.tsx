@@ -11,6 +11,9 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const activeNavigation = activeSection
+    ? NAVIGATION.find((section) => section.label === activeSection)
+    : undefined;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -51,7 +54,13 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
             <button className="mobile-nav-back" type="button" aria-label="Back to main navigation" onClick={() => setActiveSection(null)}><ChevronLeft aria-hidden="true" /> Back</button>
             <h2>{activeSection}</h2>
             <div className="mobile-nav-detail-links">
-              {NAVIGATION.find((section) => section.label === activeSection)?.links.map((link) => (
+              {activeNavigation ? (
+                <Link className="mobile-nav-overview" href={activeNavigation.href} onClick={onClose}>
+                  <span>Overview<small>{activeNavigation.description}</small></span>
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+              ) : null}
+              {activeNavigation?.links.map((link) => (
                 <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href || path.startsWith(`${link.href}/`) ? 'page' : undefined}>
                   <span>{link.label}<small>{link.description}</small></span><ArrowUpRight aria-hidden="true" />
                 </Link>
