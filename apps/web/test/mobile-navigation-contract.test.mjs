@@ -43,6 +43,7 @@ test('mobile menu exposes canonical product discovery and commercial contact', (
   assert.match(mobile, /mobile-nav-back/);
   assert.match(mobile, /setActiveSection/);
   assert.match(mobile, /mobile-contact-action/);
+  assert.match(mobile, /SITE\.businessAppUrl/);
   assert.match(footer, /\['Trust', '\/trust'\]/);
   assert.doesNotMatch(mobile, /Socials/);
   assert.doesNotMatch(mobile, /Open Neptlium Treasury/);
