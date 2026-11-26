@@ -1992,6 +1992,7 @@ body { font-family: var(--font-sans); }
 .mobile-nav-detail-links{display:grid}
 .mobile-nav-detail-links a{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 0;border-top:1px solid #303337;font-size:1.1rem}
 .mobile-nav-detail-links small{display:block;margin-top:.3rem;color:#a9b3b0;font-size:.78rem;line-height:1.5}
+.mobile-nav-detail-links a.mobile-nav-overview{color:var(--color-accent-primary)}
 .mobile-account-actions{margin-top:auto;background:#0B0C0E;border-color:#303337}
 .mobile-account-actions>a{border-color:#424749}
 .mobile-command-sheet a:focus-visible,.mobile-command-sheet button:focus-visible{outline:2px solid #71c8b7;outline-offset:4px}
