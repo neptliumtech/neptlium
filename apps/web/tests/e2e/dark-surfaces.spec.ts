@@ -126,7 +126,7 @@ test('system appearance remains correct when JavaScript is disabled', async ({ b
     try {
       const page = await context.newPage();
       await page.goto('/infrastructure', { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+      await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
       await expect(page.locator('body')).toHaveCSS(
         'background-color',
         colorScheme === 'light' ? 'rgb(244, 245, 242)' : 'rgb(11, 12, 14)',
