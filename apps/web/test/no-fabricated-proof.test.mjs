@@ -13,6 +13,7 @@ test('homepage credibility is architectural rather than synthetic scale proof', 
   assert.match(page, /Illustrative model/);
   assert.match(page, /does not represent a live payment, settlement or customer account/);
   assert.match(page, /planned|verified product state|not a claim/i);
+  assert.match(page, /payment intent and approval context/);
   assert.doesNotMatch(
     page,
     /\b[0-9]+ institutions\b|\b[0-9]+ countries\b|\b99\.9+%\b|\$[0-9]+[BMK]|\bAUM\b|guaranteed return/i,

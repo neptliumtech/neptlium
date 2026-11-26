@@ -39,7 +39,7 @@ const capabilities = [
   {
     number: '04',
     name: 'Treasury',
-    description: 'Coordinate organizational liquidity, payment intent and approvals.',
+    description: 'Understand organizational liquidity, payment intent and approval context.',
     href: '/treasury',
     note: 'Organizations',
   },
@@ -194,8 +194,8 @@ export default function HomePage() {
             <p className={styles.eyebrow}>For organizations</p>
             <h2 id="treasury-title">Operate capital with control.</h2>
             <p className={styles.lead}>
-              Treasury is designed around organizational liquidity, payment coordination,
-              approvals, policy and operational oversight.
+              Treasury is designed to bring organizational liquidity, payment intent,
+              approval context, policy and operational oversight into a clearer view.
             </p>
             <p>
               Capabilities are presented according to their verified product state. A described
