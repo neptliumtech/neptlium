@@ -77,7 +77,7 @@ test('indexable routes fit the additional certification widths', async ({ page }
       const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
       expect(response?.status(), `${route} at ${width}px`).toBe(200);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(() => document.fonts.ready.then(() => true));
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 2),
         `Horizontal overflow at ${width}px on ${route}`,
