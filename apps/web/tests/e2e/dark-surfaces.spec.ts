@@ -118,6 +118,7 @@ test('system appearance remains correct when JavaScript is disabled', async ({ b
   test.skip(before, 'The CSS fallback is introduced by the candidate, not the canonical base');
   for (const colorScheme of ['light', 'dark'] as const) {
     const context = await browser.newContext({
+      baseURL: process.env.NEPTLIUM_WEB_BASE_URL ?? 'http://127.0.0.1:3000',
       javaScriptEnabled: false,
       colorScheme,
       viewport: { width: 390, height: 844 },
