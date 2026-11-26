@@ -23,6 +23,7 @@ const groups = [
       ['Institutional', '/institutional'],
       ['Infrastructure', '/infrastructure'],
       ['Security', '/security'],
+      ['Trust', '/trust'],
     ],
   },
   {
