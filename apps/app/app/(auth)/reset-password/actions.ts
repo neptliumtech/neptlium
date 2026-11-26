@@ -38,7 +38,11 @@ export async function resetPasswordAction(
     };
 
   // A recovery means the old password may be compromised: end every session.
-  await supabase.auth.signOut({ scope: 'global' });
+  const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
+  if (signOutError) {
+    cookieStore.delete(RECOVERY_COOKIE);
+    return { error: 'Your password changed, but we could not end all sessions. Sign in with your new password to review your account security.' };
+  }
   cookieStore.delete(RECOVERY_COOKIE);
   redirect('/password-updated');
 }

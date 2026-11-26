@@ -22,16 +22,13 @@ function unavailable(message: string): ProvisioningResult {
 
 export async function getOnboardingDraft(): Promise<OnboardingDraft> {
   await requireUser();
-  try {
-    const draft = await getOnboardingDraftApi();
-    const parsed = onboardingPayloadSchema.partial().safeParse(draft.data);
-    return {
-      data: parsed.success ? (parsed.data as Partial<ProvisioningPayload>) : {},
-      stepIndex: parsed.success ? Math.min(Math.max(draft.stepIndex, 0), 7) : 0,
-    };
-  } catch {
-    return { data: {}, stepIndex: 0 };
-  }
+  const draft = await getOnboardingDraftApi();
+  const parsed = onboardingPayloadSchema.partial().safeParse(draft.data);
+  if (!parsed.success) throw new Error('Saved setup progress could not be read.');
+  return {
+    data: parsed.data as Partial<ProvisioningPayload>,
+    stepIndex: Math.min(Math.max(draft.stepIndex, 0), 7),
+  };
 }
 
 export async function saveOnboardingDraft(draft: OnboardingDraft): Promise<ProvisioningResult> {

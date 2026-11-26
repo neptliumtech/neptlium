@@ -5,6 +5,8 @@ export interface LogRecord {
   durationMs?: number;
   outcome?: string;
   errorCode?: string;
+  dependencyFailure?: string;
+  upstreamStatus?: number;
 }
 
 export interface LifecycleRecord {

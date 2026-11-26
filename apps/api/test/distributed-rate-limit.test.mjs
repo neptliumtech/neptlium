@@ -44,3 +44,33 @@ test('distributed limiter migration is RLS-protected and service-role-only', () 
   assert.match(migration, /revoke all on function[\s\S]*from public, anon, authenticated/i);
   assert.match(migration, /grant execute on function[\s\S]*to service_role/i);
 });
+
+test('distributed limiter rejects invalid decisions and keeps diagnostics off the public error details', async () => {
+  const decision = { allowed: true, remaining: 4, reset_at: reset };
+  for (const rows of [
+    [decision, decision],
+    [{ ...decision, remaining: -1 }],
+    [{ ...decision, remaining: 1.5 }],
+    [{ ...decision, remaining: 5 }],
+    [{ ...decision, allowed: false }],
+  ]) {
+    const limiter = new SupabaseRateLimiter('https://example.supabase.co', 'service', async () =>
+      Response.json(rows),
+    );
+    await assert.rejects(() => limiter.consume('key', 5, 60_000), {
+      code: 'rate_limit_unavailable',
+      failure: 'invalid_response',
+      details: undefined,
+    });
+  }
+  const limiter = new SupabaseRateLimiter('https://example.supabase.co', 'service', async () =>
+    new Response('upstream diagnostic', { status: 403 }),
+  );
+  await assert.rejects(() => limiter.consume('key', 5, 60_000), (error) => {
+    assert.equal(error.failure, 'upstream_status');
+    assert.equal(error.upstreamStatus, 403);
+    assert.equal(error.details, undefined);
+    assert.doesNotMatch(error.message, /upstream diagnostic/);
+    return true;
+  });
+});

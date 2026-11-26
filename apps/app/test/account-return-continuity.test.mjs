@@ -465,3 +465,35 @@ test('onboarding completes to validated destination only after successful provis
     assert.deepEqual(navigations, success ? [target] : []);
   }
 });
+
+test('password recovery reports incomplete session revocation without claiming success', async () => {
+  const { RECOVERY_COOKIE } = load('app/(auth)/recovery.ts');
+  const calls = [];
+  const { resetPasswordAction } = load('app/(auth)/reset-password/actions.ts', {
+    ...mocksForPages,
+    'next/headers': {
+      cookies: async () => ({
+        get: (name) => name === RECOVERY_COOKIE ? { value: '1' } : undefined,
+        delete: (name) => calls.push(['delete', name]),
+      }),
+    },
+    '@neptlium/lib/supabase/server': {
+      createSupabaseServerClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: 'account' } } }),
+          updateUser: async () => ({ error: null }),
+          signOut: async ({ scope }) => {
+            calls.push(['signOut', scope]);
+            return { error: new Error('unavailable') };
+          },
+        },
+      }),
+    },
+  });
+  const form = new FormData();
+  form.set('password', 'Synthetic-password-439!');
+  form.set('confirm', 'Synthetic-password-439!');
+  const result = await resetPasswordAction({ error: null }, form);
+  assert.match(result.error, /password changed, but we could not end all sessions/i);
+  assert.deepEqual(calls, [['signOut', 'global'], ['delete', RECOVERY_COOKIE]]);
+});

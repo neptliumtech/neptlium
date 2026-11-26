@@ -37,23 +37,28 @@ export function OnboardingWizard({
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<DraftData>(accountDefaults());
-  const [ready, setReady] = useState(false);
+  const [draftState, setDraftState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [draftAttempt, setDraftAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     getOnboardingDraft()
       .then((draft) => {
+        if (cancelled) return;
         const restoredStep = Math.min(Math.max(draft.stepIndex, 0), onboardingSteps.length - 1);
         setData({ ...accountDefaults(), ...runtimeDefaults(), ...draft.data });
         setStepIndex(restoredStep);
+        setDraftState('ready');
       })
       .catch(() => {
-        setData((current) => ({ ...accountDefaults(), ...runtimeDefaults(), ...current }));
-        setError('We could not restore your saved progress. You can continue here.');
-      })
-      .finally(() => setReady(true));
-  }, []);
+        if (!cancelled) setDraftState('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draftAttempt]);
 
   function update<K extends keyof ProvisioningPayload>(key: K, value: ProvisioningPayload[K]) {
     setData((current) => ({ ...current, [key]: value }));
@@ -143,7 +148,26 @@ export function OnboardingWizard({
     }
   }
 
-  if (!ready) {
+  if (draftState === 'unavailable') {
+    return (
+      <OnboardingShell step={1} totalSteps={2}>
+        <p className="text-sm text-text-muted" role="alert">
+          We could not load your saved progress.
+        </p>
+        <Button
+          type="button"
+          onClick={() => {
+            setDraftState('loading');
+            setDraftAttempt((attempt) => attempt + 1);
+          }}
+        >
+          Try again
+        </Button>
+      </OnboardingShell>
+    );
+  }
+
+  if (draftState === 'loading') {
     return (
       <OnboardingShell step={1} totalSteps={2}>
         <p className="text-sm text-text-muted" role="status">
