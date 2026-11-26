@@ -5,6 +5,7 @@ import test from 'node:test';
 const page = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const infrastructure = readFileSync(new URL('../app/infrastructure/page.tsx', import.meta.url), 'utf8');
 const productPages = readFileSync(new URL('../components/business-product-pages.tsx', import.meta.url), 'utf8');
+const layout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
 
 test('homepage credibility is architectural rather than synthetic scale proof', () => {
   assert.match(page, /Capital, intelligently managed\./);
@@ -24,4 +25,9 @@ test('payment and treasury illustrations disclose their non-live status', () => 
   assert.match(productPages, /Illustrative payment workflow only/);
   assert.match(productPages, /public Pay surface does not collect or settle payments/);
   assert.doesNotMatch(productPages, /Northstar Services/);
+});
+
+
+test('organization metadata does not publish unverified social destinations', () => {
+  assert.doesNotMatch(layout, /sameAs|socialDestinations/);
 });
