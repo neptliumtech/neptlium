@@ -1,64 +1,24 @@
 <!doctype html>
 <html lang="en">
-<body style="margin:0;padding:0;background:#F7F8FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#111827;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#F7F8FA;">
-<tr>
-<td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#FFFFFF;border:1px solid #EAECF0;border-radius:16px;">
-<tr>
-<td style="padding:40px 40px 0 40px;">
-<table role="presentation" cellspacing="0" cellpadding="0" border="0">
-<tr>
-<td>
-<img src="https://neptlium.com/neptlium-email-logo.png" width="48" height="48" alt="Neptlium" style="display:block;border:0;outline:none;text-decoration:none;width:48px;height:48px;">
-</td>
-<td style="padding-left:12px;font-size:17px;line-height:24px;font-weight:600;color:#111827;">Neptlium</td>
-</tr>
-</table>
-</td>
-</tr>
-
-<tr>
-<td style="padding:36px 40px 40px 40px;">
-<h1 style="margin:0 0 16px 0;font-size:27px;line-height:34px;font-weight:600;letter-spacing:-0.025em;color:#111827;">Confirm your email</h1>
-
-<p style="margin:0 0 28px 0;font-size:15px;line-height:24px;color:#667085;">
-Confirm your email address to complete your Neptlium account and continue to your capital environment.
-</p>
-
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 30px 0;">
-<tr>
-<td bgcolor="#0B8CFF" style="border-radius:8px;">
-<a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 22px;font-size:14px;line-height:20px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:8px;">Confirm email</a>
-</td>
-</tr>
-<tr><td style="padding-top:16px;font-size:14px;line-height:20px;">You can also enter this six-digit verification code on the Neptlium sign-up page: <strong>{{ .Token }}</strong></td></tr>
-</table>
-
-<p style="margin:0;font-size:13px;line-height:21px;color:#667085;">
-If you did not create a Neptlium account, you can safely ignore this email.
-</p>
-
-<div style="height:1px;background:#EAECF0;margin:32px 0 24px 0;font-size:1px;line-height:1px;">&nbsp;</div>
-
-<p style="margin:0;font-size:12px;line-height:19px;color:#98A2B3;">
-This is a security message from Neptlium. For your protection, do not forward this email or share the confirmation link.
-</p>
-</td>
-</tr>
-</table>
-
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
-<tr>
-<td align="center" style="padding:24px 20px 0 20px;">
-<p style="margin:0 0 4px 0;font-size:12px;line-height:18px;font-weight:500;color:#667085;">Neptlium</p>
-<p style="margin:0;font-size:11px;line-height:18px;color:#98A2B3;">Digital capital operating infrastructure</p>
-</td>
-</tr>
-</table>
-
-</td>
-</tr>
-</table>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Confirm your Neptlium account</title></head>
+<body style="margin:0;padding:0;background:#F3F6F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#10231F;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Confirm your email to finish creating your Neptlium account.</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F6F5;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#FFFFFF;border:1px solid #DCE6E2;border-radius:16px;">
+<tr><td style="padding:24px 28px;background:#10231F;color:#FFFFFF;border-radius:16px 16px 0 0;">
+<span style="font-size:22px;font-weight:700;letter-spacing:-0.4px;">Neptlium</span>
+</td></tr>
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:27px;line-height:34px;font-weight:650;">Confirm your email</h1>
+<p style="margin:0 0 24px;font-size:15px;line-height:24px;color:#40544D;">Confirm your email to finish creating your Neptlium account.</p>
+<table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#35D5C1" style="border-radius:8px;">
+<a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 20px;color:#10231F;text-decoration:none;font-size:15px;line-height:22px;font-weight:700;">Confirm email</a>
+</td></tr></table>
+<p style="margin:26px 0 8px;font-size:14px;line-height:22px;color:#40544D;">You can also enter this six-digit verification code on the sign-up page:</p>
+<p style="margin:0;padding:12px 16px;background:#EDF8F5;border-radius:8px;font-family:monospace;font-size:24px;letter-spacing:3px;font-weight:700;">{{ .Token }}</p>
+<p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #DCE6E2;font-size:13px;line-height:21px;color:#40544D;">If you didn’t create an account, you can ignore this email. Keep your confirmation link and code private.</p>
+</td></tr></table>
+</td></tr></table>
 </body>
 </html>

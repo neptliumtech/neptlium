@@ -177,7 +177,6 @@ export function SupabaseAuthForm({
         </form>
         <div className="mt-5 rounded-[10px] border border-border-hairline bg-surface-0 p-4 text-sm leading-6 text-text-secondary">
           <p className="font-medium text-text-primary">Already have a Neptlium account?</p>
-          <p className="mt-1">No email is sent for an address that is already registered.</p>
           <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
             <Link
               className="font-medium text-[#35D5C1] underline-offset-4 hover:underline"
@@ -237,7 +236,7 @@ export function SupabaseAuthForm({
       <p className="mt-2 text-sm leading-6 text-text-secondary">
         {isSignIn
           ? 'Access your portfolio, capital and account activity.'
-          : 'Create your Neptlium account with email and password.'}
+          : 'Create your account with an email address and a password of at least 8 characters. Then confirm your email to continue.'}
       </p>
 
       <form className="mt-7 space-y-5" onSubmit={submit}>
@@ -268,7 +267,7 @@ export function SupabaseAuthForm({
             className="mt-2 w-full rounded-[10px] border border-border-default bg-surface-0 px-3.5 py-3 text-text-primary outline-none focus:border-[#35D5C1]"
             type="password"
             autoComplete={isSignIn ? 'current-password' : 'new-password'}
-            minLength={8}
+            minLength={isSignIn ? undefined : 8}
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
