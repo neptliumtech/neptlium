@@ -46,9 +46,9 @@ jobs:
         run: pnpm --filter @neptlium/web build
       - name: Build Customer App production application
         run: pnpm --filter @neptlium/app build
-      - name: Install Playwright Chromium
+      - name: Install Playwright Chromium, Firefox and WebKit
         working-directory: apps/web
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Start Web production application
         shell: bash
         run: |
@@ -84,6 +84,9 @@ jobs:
       - name: Run Playwright release QA
         working-directory: apps/web
         run: pnpm exec playwright test
+      - name: Run Firefox and WebKit engine smoke certification
+        working-directory: apps/web
+        run: pnpm exec playwright test --config=playwright.cross-browser.config.ts
       - name: Upload canonical route visual baseline
         if: always()
         uses: actions/upload-artifact@v4
