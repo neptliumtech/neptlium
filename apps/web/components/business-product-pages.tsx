@@ -215,6 +215,10 @@ export function TreasuryPage() {
         </div>
       </section>
 
+      <p className={styles.illustrationNotice}>
+        Illustrative treasury concepts only. No live organizational balances, transactions or destination records are shown.
+      </p>
+
       <section className={`${styles.section} ${styles.mineralLightSection}`}>
         <div className={`${styles.shell} ${styles.treasuryOverview}`}>
           <div><Label>Treasury overview</Label><h2>Location before movement.</h2></div>
@@ -290,14 +294,18 @@ export function PaymentsPage() {
           <div className={`${styles.productStage} ${styles.paymentStage}`} aria-label="Governed payment flow illustration">
             <div className={styles.paymentFormHead}><span>New payment</span><span className={styles.quietBadge}>Draft intent</span></div>
             <div className={styles.paymentForm}>
-              <label><span>Recipient</span><strong>Northstar Services</strong><small>Known counterparty · operating vendor</small></label>
+              <label><span>Recipient</span><strong>Example vendor</strong><small>Illustrative vendor · no live relationship</small></label>
               <div className={styles.paymentPair}><label><span>Amount</span><strong>Amount entered at creation</strong></label><label><span>Purpose</span><strong>Operating expense</strong></label></div>
-              <div className={styles.preflight}><span>Policy preflight</span><b><i /> Approval required</b><small>Authority is checked before downstream submission.</small></div>
+              <div className={styles.preflight}><span>Policy preflight</span><b><i /> Example approval state</b><small>Authority is checked before downstream submission.</small></div>
               <div className={styles.paymentStatusLine}><span>Intent</span><FlowDot active /><span>Review</span><FlowDot /><span>Authorization</span><FlowDot /><span>Submission</span></div>
             </div>
           </div>
         </div>
       </section>
+
+      <p className={styles.illustrationNotice}>
+        Illustrative payment workflow only. No live customer, counterparty, payment or settlement data is shown. The public Pay surface does not collect or settle payments.
+      </p>
 
       <section className={`${styles.section} ${styles.whiteSection}`}>
         <div className={`${styles.shell} ${styles.intentLayout}`}>
@@ -313,7 +321,7 @@ export function PaymentsPage() {
       <section className={`${styles.section} ${styles.cloudSection}`}>
         <div className={`${styles.shell} ${styles.counterpartyLayout}`}>
           <div className={styles.counterpartyProfile}>
-            <div className={styles.counterpartyAvatar}>NS</div><div><span className={styles.uiKicker}>Counterparty</span><strong>Northstar Services</strong><small>Vendor relationship</small></div>
+            <div className={styles.counterpartyAvatar}>EV</div><div><span className={styles.uiKicker}>Counterparty</span><strong>Example vendor</strong><small>Vendor relationship</small></div>
             <dl><div><dt>Purpose</dt><dd>Operating services</dd></div><div><dt>Destination</dt><dd>Reviewed record</dd></div><div><dt>Change context</dt><dd>Visible before approval</dd></div></dl>
           </div>
           <div><Label>Counterparty context</Label><h2>Know who sits on the other side.</h2><p>Payment review is stronger when the recipient relationship, destination context and recent changes are visible beside the request.</p></div>
@@ -326,7 +334,7 @@ export function PaymentsPage() {
           <div className={styles.preflightBoard}>
             <div><span>Authority</span><b>Approver required</b></div>
             <div><span>Counterparty</span><b>Known relationship</b></div>
-            <div><span>Exception</span><b>No exception raised</b></div>
+            <div><span>Exception</span><b>Example policy outcome</b></div>
           </div>
         </div>
       </section>
