@@ -92,7 +92,8 @@ test.describe('Neptlium unified marketing release', () => {
     );
     await page.goto('/', { waitUntil: 'networkidle' });
     const nav = page.getByRole('navigation', { name: 'Primary navigation' });
-    for (const label of ['Products', 'Solutions', 'Institutional', 'Insights']) {
+    await expect(nav.getByRole('link').first()).toHaveText('Solutions');
+    for (const label of ['Solutions', 'Products', 'Institutional', 'Insights']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
     const solutionsTrigger = nav.getByRole('button', { name: 'Open Solutions menu' });
@@ -125,6 +126,7 @@ test.describe('Neptlium unified marketing release', () => {
     const dialog = page.getByRole('dialog', { name: 'Navigation' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Products' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Explore Institutional' }).click();
     await expect(dialog.getByRole('heading', { name: 'Institutional' })).toBeVisible();
@@ -139,6 +141,7 @@ test.describe('Neptlium unified marketing release', () => {
       'href',
       'https://app.neptlium.com/auth/sign-in',
     );
+    await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
     await expectNoHorizontalOverflow(page);
@@ -193,6 +196,9 @@ test.describe('Neptlium unified marketing release', () => {
     await expect(page.locator('main')).toContainText(
       'Conceptual workflow only. It does not represent a live payment, settlement or customer account.',
     );
+    await page.goto('/payments', { waitUntil: 'networkidle' });
+    await expect(page.locator('main')).toContainText('Illustrative payment workflow only.');
+    await expect(page.locator('main')).toContainText('The public Pay surface does not collect or settle payments.');
     await page.goto('/payments', { waitUntil: 'networkidle' });
     await expect(page.locator('main')).toContainText('Illustrative payment workflow only.');
     await expect(page.locator('main')).toContainText('The public Pay surface does not collect or settle payments.');
