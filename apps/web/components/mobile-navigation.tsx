@@ -14,6 +14,9 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
   const activeNavigation = activeSection
     ? NAVIGATION.find((section) => section.label === activeSection)
     : undefined;
+  const activeLinks = activeNavigation
+    ? activeNavigation.links.filter((link) => link.href !== activeNavigation.href)
+    : [];
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -60,7 +63,7 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
                   <ArrowUpRight aria-hidden="true" />
                 </Link>
               ) : null}
-              {activeNavigation?.links.map((link) => (
+              {activeLinks.map((link) => (
                 <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href || path.startsWith(`${link.href}/`) ? 'page' : undefined}>
                   <span>{link.label}<small>{link.description}</small></span><ArrowUpRight aria-hidden="true" />
                 </Link>
