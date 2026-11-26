@@ -6,7 +6,7 @@ Environment variables are configuration inputs, not capability or authority.
 
 Use the owning workspace example for local setup and override its canonical origins with local or approved Dev endpoints. Supabase project metadata confirms separate Neptlium Dev and production projects. Preview deployments require independent identity, data and provider bindings. A dedicated staging target was not verified. Production scope, database binding and provider live mode each require separate evidence.
 
-For the complete set of currently parsed API names, including webhook callback environment/identity fields and capability prerequisites, use [API config](../../apps/api/src/config.ts) and the [API template](../../apps/api/.env.example). Consult the [Clerk cutover evaluator](../../apps/app/lib/clerk-cutover.ts) and [Preview gate](../../apps/api/src/clerk-token-boundary.ts) for bounded identity prerequisites. These helpers do not establish active traffic.
+For the complete set of currently parsed API names, including webhook callback environment/identity fields and capability prerequisites, use [API config](../../apps/api/src/config.ts) and the [API template](../../apps/api/.env.example). Authentication configuration must follow [Identity](../platform/IDENTITY.md).
 
 ## Classification
 

@@ -11,7 +11,7 @@ Required runtime principles:
 - Browser applications use `NEXT_PUBLIC_SUPABASE_URL` and the publishable client key only.
 - Server components use reviewed Supabase SSR/server-session helpers.
 - API verifies Supabase access tokens and resolves the immutable authenticated subject to a stable Neptlium principal.
-- The standard runtime uses Supabase Auth. See [Identity](../platform/IDENTITY.md) for the isolated Clerk Preview boundary and release requirements.
+- The runtime uses Supabase Auth as its sole authentication authority. See [Identity](../platform/IDENTITY.md) for release requirements.
 - Supabase service-role values remain server-only persistence/infrastructure authority and are never browser credentials.
 - Historical identity-provider rows may remain as migration evidence but are inert for runtime authentication.
 
