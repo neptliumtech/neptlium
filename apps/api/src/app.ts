@@ -10,7 +10,7 @@ import {
   type WebhookVerifier,
 } from './providers.js';
 import { CircleCapitalProvider, initializeCircleSdk } from './circle.js';
-import { MemoryRateLimiter, type RateLimiter } from './security.js';
+import { RateLimitUnavailableError, MemoryRateLimiter, type RateLimiter } from './security.js';
 import { JsonObserver, MemoryObserver, type Observer } from './observability.js';
 import {
   MemoryFinancialRepository,
@@ -255,9 +255,9 @@ export async function buildApp(deps: Dependencies = {}) {
     }
     if (method === 'GET' && path === '/v1/account/status') {
       const user = await owner(context);
-      const [account, draft, verification] = await Promise.all([
-        repository.getAccountContext(user.id),
-        Promise.resolve(repository.getOnboardingDraft(user.id)).catch(() => null),
+      const account = await repository.getAccountContext(user.id);
+      const [draft, verification] = await Promise.all([
+        account.provisionedAt ? null : repository.getOnboardingDraft(user.id),
         identityVerificationView(identityVerification, user.id),
       ]);
       const onboarding = onboardingStateOf(account, draft);
@@ -697,6 +697,10 @@ export async function buildApp(deps: Dependencies = {}) {
         durationMs: performance.now() - startedAt,
         outcome: 'failure',
         errorCode: safe.code,
+        ...(safe instanceof RateLimitUnavailableError && {
+          dependencyFailure: safe.failure,
+          ...(safe.upstreamStatus !== undefined && { upstreamStatus: safe.upstreamStatus }),
+        }),
       });
       return {
         statusCode: safe.status,

@@ -25,6 +25,15 @@ export class MemoryRateLimiter implements RateLimiter {
   }
 }
 
+export class RateLimitUnavailableError extends ApiError {
+  constructor(
+    public readonly failure: 'transport' | 'timeout' | 'upstream_status' | 'invalid_response',
+    public readonly upstreamStatus?: number,
+  ) {
+    super(503, 'rate_limit_unavailable', 'Request rate limiting is unavailable');
+  }
+}
+
 type Fetch = typeof fetch;
 
 /** Distributed fixed-window limiter backed by the service-role-only Supabase RPC. */
@@ -51,18 +60,26 @@ export class SupabaseRateLimiter implements RateLimiter {
         body: JSON.stringify({ p_key: opaqueKey, p_limit: limit, p_window_ms: windowMs }),
         signal: AbortSignal.timeout(3_000),
       });
-    } catch {
-      throw new ApiError(503, 'rate_limit_unavailable', 'Request rate limiting is unavailable');
+    } catch (error) {
+      throw new RateLimitUnavailableError(
+        error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'transport',
+      );
     }
-    if (!response.ok)
-      throw new ApiError(503, 'rate_limit_unavailable', 'Request rate limiting is unavailable');
-    const rows = await response.json().catch(() => undefined) as
-      | Array<{ allowed?: unknown; remaining?: unknown; reset_at?: unknown }>
-      | undefined;
-    const row = rows?.[0];
+    if (!response.ok) throw new RateLimitUnavailableError('upstream_status', response.status);
+    const rows: unknown = await response.json().catch(() => undefined);
+    const row = Array.isArray(rows) && rows.length === 1 ? rows[0] : undefined;
     const resetAt = typeof row?.reset_at === 'string' ? Date.parse(row.reset_at) : NaN;
-    if (!row || typeof row.allowed !== 'boolean' || typeof row.remaining !== 'number' || !Number.isFinite(resetAt))
-      throw new ApiError(503, 'rate_limit_unavailable', 'Request rate limiting is unavailable');
+    if (
+      typeof row?.allowed !== 'boolean' ||
+      typeof row.remaining !== 'number' ||
+      !Number.isInteger(row.remaining) ||
+      row.remaining < 0 ||
+      row.remaining >= limit ||
+      (!row.allowed && row.remaining !== 0) ||
+      !Number.isFinite(resetAt)
+    ) {
+      throw new RateLimitUnavailableError('invalid_response');
+    }
     if (!row.allowed)
       throw new ApiError(429, 'rate_limited', 'Request rate limit exceeded', {
         retry_after_seconds: Math.max(1, Math.ceil((resetAt - Date.now()) / 1000)),

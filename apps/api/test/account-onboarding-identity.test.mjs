@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { buildApp } from '../dist/app.js';
+import { ApiError } from '../dist/errors.js';
 import { loadConfig } from '../dist/config.js';
 import { MemoryRepository } from '../dist/repositories.js';
 import { identityVerificationView, legalNameLocked } from '../dist/identity-verification.js';
@@ -71,6 +72,25 @@ test('a new account reports onboarding not started and verification not enabled'
     record: { state: 'NOT_CONFIGURED' },
     can_start: false,
   });
+});
+
+test('account status requires draft storage only when onboarding is incomplete', async () => {
+  const repository = new MemoryRepository();
+  repository.getOnboardingDraft = async () => {
+    throw new ApiError(503, 'data_unavailable', 'Onboarding draft is unavailable');
+  };
+  const app = await createApp({ repository });
+  const request = { method: 'GET', url: '/v1/account/status', headers: auth };
+
+  repository.profiles.set('owner-1', { provisionedAt: null });
+  const unavailable = await app.inject(request);
+  assert.equal(unavailable.statusCode, 503);
+  assert.equal(unavailable.json().error.code, 'data_unavailable');
+
+  repository.profiles.set('owner-1', { provisionedAt: '2026-10-21T12:00:00.000Z' });
+  const completed = await app.inject(request);
+  assert.equal(completed.statusCode, 200);
+  assert.equal(completed.json().onboarding.state, 'COMPLETED');
 });
 
 test('onboarding progress persists and is reported separately from verification', async () => {

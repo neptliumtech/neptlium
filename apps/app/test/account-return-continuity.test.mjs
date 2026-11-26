@@ -408,6 +408,7 @@ test('onboarding request context validates completion and already-provisioned se
   const page = load('app/onboarding/page.tsx', {
     '@/lib/auth': { requireUser: async () => ({ email: 'isolated@example.test' }) },
     '@/lib/auth/session': { getCurrentProfile: async () => ({ provisionedAt: 'fixture' }) },
+    '@/lib/api/client': { ApiClientError: class extends Error {} },
     '@/lib/auth/return-context': context,
     './OnboardingWizard': { OnboardingWizard: 'fixture-wizard' },
     'next/navigation': mocksForPages['next/navigation'],
@@ -415,6 +416,31 @@ test('onboarding request context validates completion and already-provisioned se
   await assert.rejects(page(), { message: `redirect:${target}` });
   header = '/onboarding?next=%2Fonboarding';
   assert.equal(await context.getOnboardingReturnPath(), '/dashboard');
+});
+
+test('onboarding keeps the form closed when the account API is unavailable', async () => {
+  class ApiClientError extends Error {
+    constructor(status) {
+      super('private upstream detail');
+      this.status = status;
+    }
+  }
+  let status = 503;
+  const page = load('app/onboarding/page.tsx', {
+    '@/lib/auth': { requireUser: async () => ({ email: 'isolated@example.test' }) },
+    '@/lib/auth/session': { getCurrentProfile: async () => { throw new ApiClientError(status); } },
+    '@/lib/auth/return-context': { getOnboardingReturnPath: async () => target },
+    '@/lib/api/client': { ApiClientError },
+    './OnboardingWizard': { OnboardingWizard: 'fixture-wizard' },
+    'next/navigation': mocksForPages['next/navigation'],
+  }).default;
+  const html = renderToStaticMarkup(await page());
+  assert.match(html, /Capital setup is unavailable/);
+  assert.match(html, /Back to dashboard/);
+  assert.doesNotMatch(html, /private upstream detail|fixture-wizard/);
+  assert.ok(html.includes('/onboarding?next=' + encodeURIComponent(target)));
+  status = 403;
+  await assert.rejects(page(), { message: 'private upstream detail' });
 });
 
 test('onboarding completes to validated destination only after successful provisioning; retry retains it', async () => {
@@ -464,4 +490,36 @@ test('onboarding completes to validated destination only after successful provis
     assert.deepEqual(calls, ['save', 'provision']);
     assert.deepEqual(navigations, success ? [target] : []);
   }
+});
+
+test('password recovery reports incomplete session revocation without claiming success', async () => {
+  const { RECOVERY_COOKIE } = load('app/(auth)/recovery.ts');
+  const calls = [];
+  const { resetPasswordAction } = load('app/(auth)/reset-password/actions.ts', {
+    ...mocksForPages,
+    'next/headers': {
+      cookies: async () => ({
+        get: (name) => name === RECOVERY_COOKIE ? { value: '1' } : undefined,
+        delete: (name) => calls.push(['delete', name]),
+      }),
+    },
+    '@neptlium/lib/supabase/server': {
+      createSupabaseServerClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: 'account' } } }),
+          updateUser: async () => ({ error: null }),
+          signOut: async ({ scope }) => {
+            calls.push(['signOut', scope]);
+            return { error: new Error('unavailable') };
+          },
+        },
+      }),
+    },
+  });
+  const form = new FormData();
+  form.set('password', 'Synthetic-password-439!');
+  form.set('confirm', 'Synthetic-password-439!');
+  const result = await resetPasswordAction({ error: null }, form);
+  assert.match(result.error, /password changed, but we could not end all sessions/i);
+  assert.deepEqual(calls, [['signOut', 'global'], ['delete', RECOVERY_COOKIE]]);
 });

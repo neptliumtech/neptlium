@@ -16,9 +16,21 @@ export function AccountSetupPrompt({ status }: { readonly status: AccountStatus 
           <p>{prompt.detail}</p>
         </div>
       </div>
-      <Link className="op-button op-button-primary mt-4" href="/onboarding">
-        {prompt.cta} <ArrowRight size={14} />
-      </Link>
+      <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
+        <li>Sign in to Neptlium <span className="text-text-muted">· Complete</span></li>
+        <li>
+          Complete your Capital profile
+          {status?.onboarding.state === 'IN_PROGRESS' ? (
+            <span className="text-text-muted"> · In progress</span>
+          ) : null}
+        </li>
+      </ol>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Link className="op-button op-button-primary" href="/onboarding">
+          {prompt.cta} <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+        <a className="op-button" href="#capital-overview">Explore the dashboard</a>
+      </div>
     </section>
   );
 }
