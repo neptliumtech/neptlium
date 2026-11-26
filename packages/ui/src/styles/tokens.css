@@ -267,6 +267,68 @@ html[data-theme='light'] {
   --shadow-card-floating: var(--shadow-elevation-2);
 }
 
+/* JavaScript-disabled first paint follows the operating-system preference.
+ * The boot script normally applies data-theme before paint; this CSS path keeps
+ * semantic surfaces and native controls correct when scripts are unavailable.
+ */
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) {
+    color-scheme: light;
+    --color-canvas: #f4f5f2;
+    --color-background: #f4f5f2;
+    --color-background-deep: #eceeea;
+    --color-surface-1: #fbfcf9;
+    --color-surface-2: #f0f2ee;
+    --color-surface-3: #e8ece7;
+    --color-surface-primary: var(--color-surface-1);
+    --color-surface-secondary: var(--color-surface-2);
+    --color-surface-raised: var(--color-surface-3);
+    --color-surface-inset: #e4e8e3;
+    --color-surface-floating: #ffffff;
+    --color-surface-interactive: #eef2ee;
+    --color-surface-overlay: rgb(11 12 14 / 46%);
+    --color-card: var(--color-surface-1);
+    --color-panel: var(--color-surface-1);
+    --color-dialog: #ffffff;
+    --color-text-primary: #101413;
+    --color-text-secondary: #444b49;
+    --color-text-muted: #69716f;
+    --color-text-disabled: #9ba19f;
+    --color-text-inverse: #f8f8f8;
+    --color-border-hairline: rgb(16 20 19 / 8%);
+    --color-border-default: rgb(16 20 19 / 14%);
+    --color-border-strong: rgb(16 20 19 / 24%);
+    --color-border-hover: rgb(31 102 102 / 38%);
+    --color-topnav: rgb(11 12 14 / 94%);
+    --color-sidebar: #eef0ec;
+    --color-sidebar-surface-secondary: #e7eae5;
+    --color-sidebar-surface-raised: #dde3de;
+    --color-sidebar-text-primary: #101413;
+    --color-sidebar-text-secondary: #444b49;
+    --color-sidebar-text-muted: #69716f;
+    --color-sidebar-border-hairline: rgb(16 20 19 / 8%);
+    --color-sidebar-border-default: rgb(16 20 19 / 14%);
+    --color-sidebar-border-strong: rgb(16 20 19 / 24%);
+    --color-accent-primary: #1f6666;
+    --color-accent-primary-hover: #0c4e4d;
+    --color-accent-primary-pressed: #0c3434;
+    --color-accent-primary-foreground: #ffffff;
+    --color-primary: var(--color-accent-primary);
+    --color-primary-foreground: #ffffff;
+    --shadow-focus-ring: 0 0 0 3px rgb(31 102 102 / 22%);
+    --shadow-elevation-1: 0 1px 2px rgb(16 20 19 / 6%);
+    --shadow-elevation-2: 0 6px 18px rgb(16 20 19 / 8%);
+    --shadow-elevation-3: 0 14px 36px rgb(16 20 19 / 10%);
+    --shadow-card-floating: var(--shadow-elevation-2);
+    --rail-shadow: #d6e3df;
+    --rail-structural: #39736d;
+    --rail-secondary: #2f665f;
+    --rail-active: #1f6666;
+    --rail-evidence: #175c57;
+    --rail-node: #39736d;
+  }
+}
+
 html[data-theme='dark'] { color-scheme: dark; }
 
 @media (prefers-reduced-motion: reduce) {
