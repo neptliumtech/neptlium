@@ -95,6 +95,17 @@ test.describe('Neptlium unified marketing release', () => {
     for (const label of ['Products', 'Solutions', 'Institutional', 'Insights']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
+    const solutionsTrigger = nav.getByRole('button', { name: 'Open Solutions menu' });
+    await solutionsTrigger.hover();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(nav.getByRole('link', { name: 'Capital visibility' })).toBeVisible();
+    await solutionsTrigger.click();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
+    await solutionsTrigger.focus();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(solutionsTrigger).toBeFocused();
     await nav.getByRole('link', { name: 'Institutional', exact: true }).click();
     await expect(page).toHaveURL(/\/institutional\/?$/);
   });
@@ -113,6 +124,7 @@ test.describe('Neptlium unified marketing release', () => {
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Navigation' });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Products' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Explore Institutional' }).click();
     await expect(dialog.getByRole('heading', { name: 'Institutional' })).toBeVisible();
@@ -127,6 +139,7 @@ test.describe('Neptlium unified marketing release', () => {
       'href',
       'https://app.neptlium.com/auth/sign-in',
     );
+    await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
     await expectNoHorizontalOverflow(page);
     await page.keyboard.press('Escape');
@@ -180,6 +193,9 @@ test.describe('Neptlium unified marketing release', () => {
     await expect(page.locator('main')).toContainText(
       'Conceptual workflow only. It does not represent a live payment, settlement or customer account.',
     );
+    await page.goto('/payments', { waitUntil: 'networkidle' });
+    await expect(page.locator('main')).toContainText('Illustrative payment workflow only.');
+    await expect(page.locator('main')).toContainText('The public Pay surface does not collect or settle payments.');
   });
 
   test('legacy product identities redirect to canonical Capital and Treasury', async ({ page }) => {
