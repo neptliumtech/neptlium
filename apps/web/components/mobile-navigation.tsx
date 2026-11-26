@@ -34,13 +34,21 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
     };
   }, [onClose, triggerRef]);
 
-  return <div className="mobile-command-wrap" role="dialog" aria-modal="true" aria-label="Navigation">
+  return <div
+    className="mobile-command-wrap"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Navigation"
+    onClick={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}
+  >
     <div id="mobile-command-sheet" className="mobile-command-sheet" ref={panelRef}>
       <div className="mobile-command-head"><Brand tone="teal" /><button ref={closeRef} type="button" aria-label="Close navigation" onClick={onClose}><X aria-hidden="true" /></button></div>
       <nav className="mobile-command-nav" aria-label="Mobile navigation">
         {activeSection ? (
           <div className="mobile-nav-detail">
-            <button className="mobile-nav-back" type="button" onClick={() => setActiveSection(null)}><ChevronLeft aria-hidden="true" /> Back</button>
+            <button className="mobile-nav-back" type="button" aria-label="Back to main navigation" onClick={() => setActiveSection(null)}><ChevronLeft aria-hidden="true" /> Back</button>
             <h2>{activeSection}</h2>
             <div className="mobile-nav-detail-links">
               {NAVIGATION.find((section) => section.label === activeSection)?.links.map((link) => (
@@ -60,6 +68,7 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
         <div className="mobile-account-actions" aria-label="Account access">
           <a href={SITE.personalSignInUrl}>Sign in</a>
           <a className="mobile-enter-action" href={SITE.personalSignUpUrl}>Get started <ArrowRight aria-hidden="true" /></a>
+          <Link className="mobile-contact-action" href="/contact" onClick={onClose}>Talk to Neptlium <ArrowUpRight aria-hidden="true" /></Link>
         </div>
 
       </nav>
