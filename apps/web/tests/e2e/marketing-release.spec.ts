@@ -181,6 +181,21 @@ test.describe('Neptlium unified marketing release', () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test('desktop header preserves the commercial contact and account entry points', async ({ page }, testInfo) => {
+    test.skip(!['desktop-1440', 'laptop-1280'].includes(testInfo.project.name), 'Desktop header contract');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const header = page.getByRole('banner');
+    await expect(header.getByRole('link', { name: 'Talk to Neptlium', exact: true })).toHaveAttribute('href', '/contact');
+    await expect(header.getByRole('link', { name: 'Get started', exact: true })).toHaveAttribute('href', personalSignUpUrl);
+  });
+
+  test('organization structured data omits unverified social profile claims', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const payload = await page.locator('script[type="application/ld+json"]').first().textContent();
+    const organization = JSON.parse(payload ?? '{}');
+    expect(organization).not.toHaveProperty('sameAs');
+  });
+
   test('homepage brand and journey CTAs remain canonical', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const hero = page.locator('section[aria-labelledby="home-title"]');
