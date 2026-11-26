@@ -66,3 +66,41 @@ for (const preference of ['light', 'dark', 'system'] as const) {
     });
   }
 }
+
+
+test('indexable routes fit the additional certification widths', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-1440', 'Additional viewport matrix runs once per route');
+  const widths = [320, 375, 412, 430, 1024, 1920];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: width <= 430 ? 844 : 1000 });
+    for (const route of INDEXABLE_ROUTES) {
+      const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
+      expect(response?.status(), `${route} at ${width}px`).toBe(200);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      await page.evaluate(() => document.fonts.ready.then(() => true));
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 2),
+        `Horizontal overflow at ${width}px on ${route}`,
+      ).toBe(true);
+    }
+  }
+});
+
+test('public navigation remains available in forced-colors mode', async ({ page }, testInfo) => {
+  test.skip(!['desktop-1440', 'mobile-390'].includes(testInfo.project.name), 'Forced-colors coverage');
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('main')).toBeVisible();
+  if (testInfo.project.name === 'desktop-1440') {
+    const trigger = page.getByRole('button', { name: 'Open Solutions menu' });
+    await trigger.focus();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(page.getByRole('link', { name: /^Capital visibility/ })).toBeVisible();
+  } else {
+    const trigger = page.getByRole('button', { name: 'Open navigation' });
+    await trigger.click();
+    await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Navigation' }).getByRole('link', { name: 'Talk to Neptlium' })).toBeVisible();
+  }
+});

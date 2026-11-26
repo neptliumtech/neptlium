@@ -70,7 +70,7 @@ jobs:
           path: apps/web/test-results/**/before-*.png
           if-no-files-found: error
           retention-days: 30
-      - name: Validate semantic surfaces against committed visual baselines
+      - name: Validate semantic surfaces, contrast and rendered evidence
         working-directory: apps/web
         run: pnpm exec playwright test dark-surfaces.spec.ts
       - name: Upload rendered evidence and candidate visual baselines

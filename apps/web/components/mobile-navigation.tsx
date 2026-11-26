@@ -11,6 +11,12 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const activeNavigation = activeSection
+    ? NAVIGATION.find((section) => section.label === activeSection)
+    : undefined;
+  const activeLinks = activeNavigation
+    ? activeNavigation.links.filter((link) => link.href !== activeNavigation.href)
+    : [];
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -34,17 +40,31 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
     };
   }, [onClose, triggerRef]);
 
-  return <div className="mobile-command-wrap" role="dialog" aria-modal="true" aria-label="Navigation">
+  return <div
+    className="mobile-command-wrap"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Navigation"
+    onClick={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}
+  >
     <div id="mobile-command-sheet" className="mobile-command-sheet" ref={panelRef}>
       <div className="mobile-command-head"><Brand tone="teal" /><button ref={closeRef} type="button" aria-label="Close navigation" onClick={onClose}><X aria-hidden="true" /></button></div>
       <nav className="mobile-command-nav" aria-label="Mobile navigation">
         {activeSection ? (
           <div className="mobile-nav-detail">
-            <button className="mobile-nav-back" type="button" onClick={() => setActiveSection(null)}><ChevronLeft aria-hidden="true" /> Back</button>
+            <button className="mobile-nav-back" type="button" aria-label="Back to main navigation" onClick={() => setActiveSection(null)}><ChevronLeft aria-hidden="true" /> Back</button>
             <h2>{activeSection}</h2>
             <div className="mobile-nav-detail-links">
-              {NAVIGATION.find((section) => section.label === activeSection)?.links.map((link) => (
-                <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href ? 'page' : undefined}>
+              {activeNavigation ? (
+                <Link className="mobile-nav-overview" href={activeNavigation.href} onClick={onClose}>
+                  <span>Overview<small>{activeNavigation.description}</small></span>
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+              ) : null}
+              {activeLinks.map((link) => (
+                <Link href={link.href} key={link.href} onClick={onClose} aria-current={path === link.href || path.startsWith(`${link.href}/`) ? 'page' : undefined}>
                   <span>{link.label}<small>{link.description}</small></span><ArrowUpRight aria-hidden="true" />
                 </Link>
               ))}
@@ -59,7 +79,9 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
         )}
         <div className="mobile-account-actions" aria-label="Account access">
           <a href={SITE.personalSignInUrl}>Sign in</a>
+          <a href={SITE.businessAppUrl}>Treasury access</a>
           <a className="mobile-enter-action" href={SITE.personalSignUpUrl}>Get started <ArrowRight aria-hidden="true" /></a>
+          <Link className="mobile-contact-action" href="/contact" onClick={onClose}>Talk to Neptlium <ArrowUpRight aria-hidden="true" /></Link>
         </div>
 
       </nav>

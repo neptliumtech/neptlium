@@ -92,9 +92,25 @@ test.describe('Neptlium unified marketing release', () => {
     );
     await page.goto('/', { waitUntil: 'networkidle' });
     const nav = page.getByRole('navigation', { name: 'Primary navigation' });
-    for (const label of ['Products', 'Solutions', 'Institutional', 'Insights']) {
+    await expect(nav.getByRole('link').first()).toHaveText('Solutions');
+    for (const label of ['Solutions', 'Products', 'Institutional', 'Insights']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
+    const solutionsTrigger = nav.getByRole('button', { name: 'Open Solutions menu' });
+    await solutionsTrigger.hover();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(nav.getByRole('link', { name: /^Capital visibility/ })).toBeVisible();
+    await solutionsTrigger.click();
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
+    await solutionsTrigger.press('Enter');
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(solutionsTrigger).toBeFocused();
+    await solutionsTrigger.press('Enter');
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('main').click({ position: { x: 8, y: 8 } });
+    await expect(solutionsTrigger).toHaveAttribute('aria-expanded', 'false');
     await nav.getByRole('link', { name: 'Institutional', exact: true }).click();
     await expect(page).toHaveURL(/\/institutional\/?$/);
   });
@@ -113,10 +129,17 @@ test.describe('Neptlium unified marketing release', () => {
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Navigation' });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Explore Solutions' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Explore Products' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Explore Products' }).click();
+    await expect(dialog.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/platform');
+    await dialog.getByRole('button', { name: 'Back to main navigation' }).click();
+    await dialog.getByRole('button', { name: 'Explore Solutions' }).click();
+    await expect(dialog.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/solutions');
+    await dialog.getByRole('button', { name: 'Back to main navigation' }).click();
     await dialog.getByRole('button', { name: 'Explore Institutional' }).click();
     await expect(dialog.getByRole('heading', { name: 'Institutional' })).toBeVisible();
-    await expect(dialog.getByRole('link', { name: /Institutional/ })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/institutional');
     await dialog.getByRole('button', { name: /Back/ }).click();
     await expect(dialog.getByRole('button', { name: 'Explore Products' })).toBeVisible();
     await expect(dialog.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute(
@@ -127,6 +150,11 @@ test.describe('Neptlium unified marketing release', () => {
       'href',
       'https://app.neptlium.com/auth/sign-in',
     );
+    await expect(dialog.getByRole('link', { name: 'Treasury access', exact: true })).toHaveAttribute(
+      'href',
+      businessAppUrl,
+    );
+    await expect(dialog.getByRole('link', { name: 'Talk to Neptlium' })).toHaveAttribute('href', '/contact');
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
     await expectNoHorizontalOverflow(page);
     await page.keyboard.press('Escape');
@@ -157,27 +185,50 @@ test.describe('Neptlium unified marketing release', () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test('desktop header preserves the commercial contact and account entry points', async ({ page }, testInfo) => {
+    test.skip(!['desktop-1440', 'laptop-1280'].includes(testInfo.project.name), 'Desktop header contract');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    const header = page.getByRole('banner');
+    await expect(header.getByRole('link', { name: 'Talk to Neptlium', exact: true })).toHaveAttribute('href', '/contact');
+    await expect(header.getByRole('link', { name: 'Get started', exact: true })).toHaveAttribute('href', personalSignUpUrl);
+  });
+
+  test('organization structured data omits unverified social profile claims', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const payload = await page.locator('script[type="application/ld+json"]').first().textContent();
+    const organization = JSON.parse(payload ?? '{}');
+    expect(organization).not.toHaveProperty('sameAs');
+  });
+
   test('homepage brand and journey CTAs remain canonical', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await expect(
-      page.getByRole('heading', { name: 'Invest with clarity. Build with confidence.' }),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: /Get started/i }).first()).toHaveAttribute(
+    const hero = page.locator('section[aria-labelledby="home-title"]');
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveText('Capital, intelligently managed.');
+    await expect(hero.getByRole('link', { name: 'Explore the platform' })).toHaveAttribute(
       'href',
-      'https://app.neptlium.com/auth/sign-up',
+      '/platform',
     );
-    await expect(page.getByRole('link', { name: /Explore investing/i })).toHaveAttribute(
+    await expect(hero.getByRole('link', { name: 'About Neptlium' })).toHaveAttribute(
       'href',
-      '/investments',
+      '/company',
     );
-    await expect(page.getByRole('link', { name: /Discover Neptlium Capital/i }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Explore Neptlium Capital' })).toHaveAttribute(
       'href',
       '/capital',
     );
-    await expect(page.locator('main').getByRole('link', { name: /^Treasury\s/ }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Explore Neptlium Treasury' })).toHaveAttribute(
       'href',
       '/treasury',
     );
+    await expect(page.locator('main')).toContainText(
+      'Conceptual workflow only. It does not represent a live payment, settlement or customer account.',
+    );
+    await page.goto('/payments', { waitUntil: 'networkidle' });
+    await expect(page.locator('main')).toContainText('Illustrative payment workflow only.');
+    await expect(page.locator('main')).toContainText('The public Pay surface does not collect or settle payments.');
+    await page.goto('/payments', { waitUntil: 'networkidle' });
+    await expect(page.locator('main')).toContainText('Illustrative payment workflow only.');
+    await expect(page.locator('main')).toContainText('The public Pay surface does not collect or settle payments.');
   });
 
   test('legacy product identities redirect to canonical Capital and Treasury', async ({ page }) => {

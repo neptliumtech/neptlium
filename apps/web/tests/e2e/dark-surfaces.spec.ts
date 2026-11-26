@@ -89,8 +89,18 @@ for (const route of routes) {
       await page.evaluate(() => document.fonts.ready);
 
       if (visualSample) {
-        await page.screenshot({ path: testInfo.outputPath(`after-${slug}-${preference}-${testInfo.project.name}.png`), fullPage: true, animations: 'disabled' });
-        await expect(family).toHaveScreenshot(`${slug}-${preference}.png`, { animations: 'disabled', maxDiffPixelRatio: 0.005 });
+        const visualEvidence = await page.screenshot({
+          path: testInfo.outputPath(`after-${slug}-${preference}-${testInfo.project.name}.png`),
+          fullPage: true,
+          animations: 'disabled',
+        });
+        // Compare the rendered capability surface against the reviewed, route-specific
+        // Playwright baseline. The infrastructure baseline was refreshed for the approved
+        // disclosure/table expansion; the intelligence baseline remains unchanged.
+        await expect(family).toHaveScreenshot(`${slug}-${preference}.png`, {
+          animations: 'disabled',
+          maxDiffPixelRatio: 0.005,
+        });
       }
       if (preference === 'system') {
         await page.emulateMedia({ colorScheme: 'light' });
@@ -104,3 +114,29 @@ for (const route of routes) {
     });
   }
 }
+
+
+test('system appearance remains correct when JavaScript is disabled', async ({ browser }) => {
+  test.skip(before, 'The CSS fallback is introduced by the candidate, not the canonical base');
+  for (const colorScheme of ['light', 'dark'] as const) {
+    const context = await browser.newContext({
+      baseURL: process.env.NEPTLIUM_WEB_BASE_URL ?? 'http://127.0.0.1:3000',
+      javaScriptEnabled: false,
+      colorScheme,
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      const page = await context.newPage();
+      await page.goto('/infrastructure', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+      await expect(page.locator('body')).toHaveCSS(
+        'background-color',
+        colorScheme === 'light' ? 'rgb(244, 245, 242)' : 'rgb(11, 12, 14)',
+      );
+      await expect(page.locator('h1')).toHaveText('Build on Neptlium.');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
+    } finally {
+      await context.close();
+    }
+  }
+});

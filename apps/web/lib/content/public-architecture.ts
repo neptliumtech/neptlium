@@ -204,16 +204,16 @@ export const PRODUCT_LINKS = [
 
 export const NAVIGATION = [
   {
-    label: 'Products',
-    href: '/capital',
-    description: 'Explore connected Neptlium capabilities.',
-    links: PRODUCT_LINKS,
-  },
-  {
     label: 'Solutions',
     href: '/solutions',
     description: 'Capital visibility and treasury coordination.',
     links: SOLUTIONS,
+  },
+  {
+    label: 'Products',
+    href: '/platform',
+    description: 'Explore connected Neptlium capabilities.',
+    links: PRODUCT_LINKS,
   },
   {
     label: 'Institutional',
