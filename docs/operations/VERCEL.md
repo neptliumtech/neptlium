@@ -48,13 +48,24 @@ Each canonical hostname resolved in Vercel's alias API to the production deploym
 - The Supabase installation owns Production-scoped variables on App and API. The exact linked Supabase project for each Vercel binding remains unverified. API has no listed Preview or Development Supabase endpoint and credentials for the server auth/data contract, and App has no listed Preview API origin. Treasury and Pay share a single API-origin entry across Production and Preview.
 - Admin has Production-only site and API origin entries and no listed project-scoped Supabase entries. Web has shared Production and Preview site and API origin entries. Docs and Status returned no project-scoped variable metadata. Team-level variables and build-time defaults may affect effective configuration.
 - No Clerk-named Vercel project variable was returned for the eight projects. That check did not inspect team-level variables, values, or older deployment snapshots. [AUTH-00 PR #181](https://github.com/neptliumtech/neptlium/pull/181) remains open. Keep the deployed authentication path until replacement continuity is verified.
-- Supabase Dev and Production each returned only their default branch. Dev returned zero recorded migrations and zero public tables. Production's 50 recorded migration versions exactly matched the 50 tracked versions on the base commit. A read-only catalog query found RLS enabled on all 86 Production public tables and partitions. Version parity and RLS flags leave schema and grant parity, policy behavior, backup availability and recoverability unverified. [Recovery PR #172](https://github.com/neptliumtech/neptlium/pull/172) already stages migration and restore verification.
+- Supabase Dev and Production each returned only their default branch. Before ENV-01.3, Dev returned zero recorded migrations and zero public tables. Production's 50 recorded migration versions exactly matched the 50 tracked versions on the base commit. A read-only catalog query found RLS enabled on all 86 Production public tables and partitions. Version parity and RLS flags leave schema and grant parity, policy behavior, backup availability and recoverability unverified. [Recovery PR #172](https://github.com/neptliumtech/neptlium/pull/172) already stages migration and restore verification.
+
+### ENV-01.3 Dev baseline
+
+Dev project `ntbaoylcrwkowqqvzkno` was initialized from the 50 tracked migrations at `dad8075d`. The rollback-only replay passed after resetting session options between migration files. The apply used a single transaction with an empty-database guard, keeping the original migration versions and names in the Supabase ledger. The repository migration files were unchanged.
+
+- **PASS** — Dev contains all 50 tracked versions and all 86 public tables and partitions have RLS enabled.
+- **PASS** — The [existing recovery fixture](https://github.com/neptliumtech/neptlium/pull/172) passed on Dev inside a rollback-only transaction. It checked organization isolation, private membership and identity grants, principal revocation, and the rate limiter's role boundary. A separate query confirmed zero Auth users, organizations, and ledger postings after rollback.
+- **OPEN** — Dev security advisors returned 45 tables with RLS and no policy, plus 7 authenticated-callable definer functions. Review the intended grant and caller contracts before certifying broader permissions.
+- **BLOCKED** — A protected Preview still needs Dev-only API credentials installed through an authorized secret transfer and an independent API origin. Shared browser entries remain scoped across Production and Preview. No Preview binding or deployment was changed during this increment.
+
+The bootstrap transaction would roll back in full on an apply error. After commit, any rollback requires a Dev-only recovery decision. Avoid a destructive reset as part of connecting Preview.
 
 ### TARGET
 
-Certify Dev before binding a protected Preview. Use independent Supabase project references, browser keys, server credentials and API origins for Preview and Production. Verify runtime references and issuer acceptance for the same Preview commit, then verify cross-environment token rejection and tenant isolation. Export names, scopes, branch overrides and integration ownership before configuration changes. Preserve the current alias target IDs and provider-managed credential references for rollback. Keep production release certification gated on functional validation of the exact served commit and an isolated recovery rehearsal.
+Bind a protected Preview after the Dev credential handoff. Use independent Supabase project references, browser keys, server credentials and API origins for Preview and Production. Verify runtime references and issuer acceptance for the same Preview commit, then verify cross-environment token rejection and tenant isolation. Export names, scopes, branch overrides and integration ownership before configuration changes. Preserve the current alias target IDs and provider-managed credential references for rollback. Keep production release certification gated on functional validation of the exact served commit and an isolated recovery rehearsal.
 
-**Disposition** — ENV-01 remains open. Shared scopes and missing Dev schema are verified gaps. No infrastructure mutation or deployment was performed.
+**Disposition** — ENV-01 remains open. Dev schema initialization passed. Preview isolation is incomplete. No production change or deployment was performed.
 
 ## Verification
 
