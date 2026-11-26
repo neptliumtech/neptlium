@@ -67,6 +67,7 @@ export function MobileNavigation({ path, onClose, triggerRef }: { path: string; 
         )}
         <div className="mobile-account-actions" aria-label="Account access">
           <a href={SITE.personalSignInUrl}>Sign in</a>
+          <a href={SITE.businessAppUrl}>Treasury access</a>
           <a className="mobile-enter-action" href={SITE.personalSignUpUrl}>Get started <ArrowRight aria-hidden="true" /></a>
           <Link className="mobile-contact-action" href="/contact" onClick={onClose}>Talk to Neptlium <ArrowUpRight aria-hidden="true" /></Link>
         </div>
