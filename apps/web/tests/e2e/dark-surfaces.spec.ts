@@ -115,6 +115,7 @@ for (const route of routes) {
 
 
 test('system appearance remains correct when JavaScript is disabled', async ({ browser }) => {
+  test.skip(before, 'The CSS fallback is introduced by the candidate, not the canonical base');
   for (const colorScheme of ['light', 'dark'] as const) {
     const context = await browser.newContext({
       javaScriptEnabled: false,
