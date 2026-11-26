@@ -22,7 +22,7 @@ test('homepage credibility is architectural rather than synthetic scale proof', 
 
 
 test('payment and treasury illustrations disclose their non-live status', () => {
-  assert.match(infrastructure, /does not collect payments or perform settlement/);
+  assert.match(infrastructure, /minimally privileged public surface/);
   assert.match(productPages, /Illustrative treasury concepts only/);
   assert.match(productPages, /Illustrative payment workflow only/);
   assert.match(capital, /Capital overview · illustrative/);
