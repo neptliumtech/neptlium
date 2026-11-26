@@ -96,11 +96,11 @@ test('public navigation remains available in forced-colors mode', async ({ page 
     await trigger.focus();
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await expect(page.getByRole('link', { name: 'Capital visibility' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Capital visibility', exact: true })).toBeVisible();
   } else {
     const trigger = page.getByRole('button', { name: 'Open navigation' });
     await trigger.click();
     await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Talk to Neptlium' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Navigation' }).getByRole('link', { name: 'Talk to Neptlium' })).toBeVisible();
   }
 });
