@@ -47,8 +47,8 @@ for (const preference of ['light', 'dark', 'system'] as const) {
       const nav = page.getByRole('navigation', { name: 'Primary navigation' });
       const products = nav.getByRole('link', { name: 'Products', exact: true });
       const solutions = nav.getByRole('link', { name: 'Solutions', exact: true });
-      const a = (await products.boundingBox())!;
-      const b = (await solutions.boundingBox())!;
+      const a = (await solutions.boundingBox())!;
+      const b = (await products.boundingBox())!;
       expect(b.x - a.x - a.width).toBeGreaterThanOrEqual(12);
       expect(await contrast(page, '.command-nav-group > a', '.site-header')).toBeGreaterThan(4.5);
       await products.focus();
