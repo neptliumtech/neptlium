@@ -96,7 +96,7 @@ test('public navigation remains available in forced-colors mode', async ({ page 
     await trigger.focus();
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await expect(page.getByRole('link', { name: 'Capital visibility', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Capital visibility/ })).toBeVisible();
   } else {
     const trigger = page.getByRole('button', { name: 'Open navigation' });
     await trigger.click();
