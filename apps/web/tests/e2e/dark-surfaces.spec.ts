@@ -112,3 +112,27 @@ for (const route of routes) {
     });
   }
 }
+
+
+test('system appearance remains correct when JavaScript is disabled', async ({ browser }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      colorScheme,
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      const page = await context.newPage();
+      await page.goto('/infrastructure', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+      await expect(page.locator('body')).toHaveCSS(
+        'background-color',
+        colorScheme === 'light' ? 'rgb(244, 245, 242)' : 'rgb(11, 12, 14)',
+      );
+      await expect(page.locator('h1')).toHaveText('Build on Neptlium.');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
+    } finally {
+      await context.close();
+    }
+  }
+});
