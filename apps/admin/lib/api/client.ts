@@ -22,25 +22,38 @@ function apiOrigin(): string {
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost','127.0.0.1'].includes(url.hostname))) {
     throw new AdminApiError(503, 'invalid_api_origin', 'The Neptlium API origin is invalid.');
   }
+  if (process.env.VERCEL_ENV === 'preview' && (
+    url.protocol !== 'https:' || !url.hostname.endsWith('.vercel.app') || url.port ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') !== 'https://ntbaoylcrwkowqqvzkno.supabase.co'
+  )) {
+    throw new AdminApiError(503, 'invalid_preview_binding', 'The Preview API binding is invalid.');
+  }
   return url.origin;
 }
 
 async function execute<T>(token: string, path: `/v1/admin${string}`, init: RequestInit = {}): Promise<T> {
+  const origin = apiOrigin();
+  const headers = new Headers(init.headers);
+  headers.set('accept', 'application/json');
+  if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  headers.delete('x-vercel-protection-bypass');
+  if (process.env.VERCEL_ENV === 'preview') {
+    const bypass = process.env.NEPTLIUM_PREVIEW_API_BYPASS_SECRET;
+    if (!bypass) throw new AdminApiError(503, 'preview_api_not_configured', 'The protected Preview API is not configured.');
+    headers.set('x-vercel-protection-bypass', bypass);
+  }
+  headers.set('authorization', `Bearer ${token}`);
   const requestId = randomUUID();
+  headers.set('x-request-id', requestId);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
-    const response = await fetch(`${apiOrigin()}${path}`, {
+    const response = await fetch(`${origin}${path}`, {
       ...init,
       method: (init.method ?? 'GET').toUpperCase(),
       cache: 'no-store',
-      headers: {
-        accept: 'application/json',
-        ...(init.body ? { 'content-type': 'application/json' } : {}),
-        ...init.headers,
-        authorization: `Bearer ${token}`,
-        'x-request-id': requestId,
-      },
+      headers,
+      ...(process.env.VERCEL_ENV === 'preview' ? { redirect: 'error' } : {}),
       signal: controller.signal,
     });
     const payload = (await response.json().catch(() => ({}))) as T & {

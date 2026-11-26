@@ -47,8 +47,8 @@ test("admin runtime env contains only browser-safe auth config plus server-only 
 test("canonical server-side admin API client forwards bearer identity and request IDs with timeout and no mutation retry loop", () => {
   const client = readFileSync(join(root, "lib/api/client.ts"), "utf8");
   assert.match(client, /NEPTLIUM_API_URL/);
-  assert.match(client, /authorization: `Bearer \$\{token\}`/);
-  assert.match(client, /'x-request-id': requestId/);
+  assert.match(client, /headers\.set\('authorization', `Bearer \$\{token\}`\)/);
+  assert.match(client, /headers\.set\('x-request-id', requestId\)/);
   assert.match(client, /AbortController/);
   assert.match(client, /8_000/);
   assert.doesNotMatch(client, /NEXT_PUBLIC_NEPTLIUM_API_URL/);
