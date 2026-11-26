@@ -9,13 +9,6 @@ import { SiteFooter } from '@/components/site-footer';
 import { SkipLink } from '@/components/skip-link';
 import { SITE } from '@/lib/content/site';
 
-const socialDestinations = [
-  'https://bsky.app/profile/neptlium.bsky.social',
-  'https://x.com/Neptlium',
-  'https://youtube.com/@neptlium?si=fJ7q0r18UCoxjJth',
-  'https://www.tiktok.com/@neptlium?_r=1&_t=ZS-98quVuRhCNt',
-] as const;
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: 'Neptlium — Capital, intelligently managed', template: '%s — Neptlium' },
@@ -70,7 +63,6 @@ const jsonLd = {
   logo: SITE.url + '/icon.svg',
   description: SITE.description,
   email: SITE.supportEmail,
-  sameAs: socialDestinations,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
